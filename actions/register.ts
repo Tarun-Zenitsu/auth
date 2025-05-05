@@ -3,8 +3,8 @@
 import { RegisterSchema } from "@/schemas";
 import * as z from "zod";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
 import { getUserByEmail } from "@/data/user";
+import prisma from "@/lib/db";
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
   const validatedFields = RegisterSchema.safeParse(values);
@@ -20,7 +20,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { error: "Email already in use!" };
   }
 
-  await db.user.create({
+  await prisma.user.create({
     data: {
       name,
       email,

@@ -3,6 +3,8 @@
 import { LoginSchema } from "@/schemas";
 import { signIn } from "@/auth";
 import * as z from "zod";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { AuthError } from "next-auth";
 
 export const login = async (values: z.infer<typeof LoginSchema>) => {
   const validatedFields = LoginSchema.safeParse(values);
@@ -14,19 +16,17 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
   const { email, password } = validatedFields.data;
 
   try {
-    const res = await signIn("credentials", {
+    await signIn("credentials", {
       email,
       password,
-      redirect: false, // Prevents NEXT_REDIRECT
+      redirect: false,
     });
 
-    if (res?.error) {
-      return { error: res.error };
-    }
-
     return { success: "Login successful!" };
-  } catch (error: any) {
-    const message = error?.cause?.err?.message || error?.message;
-    return { error: message || "Something went wrong." };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: "Invalid email or password." };
+    }
+    return { error: "An unexpected error occurred." };
   }
 };

@@ -157,7 +157,7 @@ const LoginForm = () => {
         setSuccess(data?.success);
 
         if (data?.success) {
-          router.push("/settings"); // Change to your desired post-login page
+          router.push("/admin"); // Change to your desired post-login page
         }
       });
     });

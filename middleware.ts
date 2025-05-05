@@ -20,16 +20,14 @@ export default auth((req) => {
 
   if (isApiAuthRoute) return;
 
-  // ✅ Prevent loop: let public & auth routes be accessible when not logged in
-  if (isPublicRoute || isAuthRoute) {
-    if (isLoggedIn && isAuthRoute) {
+  if (isAuthRoute) {
+    if (isLoggedIn) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
     return;
   }
 
-  // ✅ Only redirect to login for protected routes
-  if (!isLoggedIn) {
+  if (!isLoggedIn && !isPublicRoute) {
     return Response.redirect(new URL("/auth/login", nextUrl));
   }
 
