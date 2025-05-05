@@ -19,7 +19,7 @@ interface NewJobFormProps {
 
 export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
   const user = useCurrentUser();
-  console.log(user);
+
   const [formData, setFormData] = useState({
     jobTitle: "",
     department: "",
@@ -42,8 +42,8 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleUrgencyChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, urgency: value.toUpperCase() }));
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,26 +93,57 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
     <form className="space-y-4" onSubmit={handleSubmit}>
       {successMessage && <FormSuccess message={successMessage} />}
 
-      <Input
-        name="jobTitle"
-        value={formData.jobTitle}
-        onChange={handleChange}
-        placeholder="Job Title"
-        required
-      />
-      <Input
-        name="department"
-        value={formData.department}
-        onChange={handleChange}
-        placeholder="Department"
-        required
-      />
-      <Input
-        name="budgetCode"
-        value={formData.budgetCode}
-        onChange={handleChange}
-        placeholder="Budget Code"
-      />
+      {/* Job Title Dropdown */}
+      <Select
+        onValueChange={(val) => handleSelectChange("jobTitle", val)}
+        defaultValue=""
+      >
+        <SelectTrigger>
+          <span>{formData.jobTitle || "Select Job Title"}</span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Software Engineer">Software Engineer</SelectItem>
+          <SelectItem value="Frontend Developer">Frontend Developer</SelectItem>
+          <SelectItem value="Backend Developer">Backend Developer</SelectItem>
+          <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
+          <SelectItem value="QA Engineer">QA Engineer</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Department Dropdown */}
+      <Select
+        onValueChange={(val) => handleSelectChange("department", val)}
+        defaultValue=""
+      >
+        <SelectTrigger>
+          <span>{formData.department || "Select Department"}</span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Engineering">Engineering</SelectItem>
+          <SelectItem value="Product">Product</SelectItem>
+          <SelectItem value="Design">Design</SelectItem>
+          <SelectItem value="QA">QA</SelectItem>
+          <SelectItem value="IT">IT</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Budget Code Dropdown */}
+      <Select
+        onValueChange={(val) => handleSelectChange("budgetCode", val)}
+        defaultValue=""
+      >
+        <SelectTrigger>
+          <span>{formData.budgetCode || "Select Budget Code"}</span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="DEV123">DEV123</SelectItem>
+          <SelectItem value="PROD456">PROD456</SelectItem>
+          <SelectItem value="DES789">DES789</SelectItem>
+          <SelectItem value="QA321">QA321</SelectItem>
+          <SelectItem value="IT654">IT654</SelectItem>
+        </SelectContent>
+      </Select>
+
       <Textarea
         name="justification"
         value={formData.justification}
@@ -133,15 +164,18 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         onChange={handleChange}
         placeholder="e.g., React, Node.js"
       />
-      <Select onValueChange={handleUrgencyChange} defaultValue="">
+      <Select
+        onValueChange={(val) => handleSelectChange("urgency", val)}
+        defaultValue=""
+      >
         <SelectTrigger>
           <span>{formData.urgency || "Select urgency"}</span>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="low">Low</SelectItem>
-          <SelectItem value="medium">Medium</SelectItem>
-          <SelectItem value="high">High</SelectItem>
-          <SelectItem value="critical">Critical</SelectItem>
+          <SelectItem value="LOW">Low</SelectItem>
+          <SelectItem value="MEDIUM">Medium</SelectItem>
+          <SelectItem value="HIGH">High</SelectItem>
+          <SelectItem value="CRITICAL">Critical</SelectItem>
         </SelectContent>
       </Select>
       <Input
