@@ -51,6 +51,7 @@ const Page = () => {
       setRequisitions((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       setFeedback("Error processing decision.");
+      console.log(err);
     }
   };
 

@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+// import { auth } from "@/auth";
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -45,26 +45,26 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
-  const session = await auth();
+// export async function GET() {
+//   const session = await auth();
 
-  if (!session || !["RECRUITER", "ADMIN"].includes(session.user.role)) {
-    return new NextResponse("Unauthorized", { status: 403 });
-  }
+//   if (!session || !["RECRUITER", "ADMIN"].includes(session.user.role)) {
+//     return new NextResponse("Unauthorized", { status: 403 });
+//   }
 
-  const requisitions = await prisma.requisition.findMany({
-    include: {
-      createdBy: {
-        select: { name: true, email: true },
-      },
-      approvedBy: {
-        select: { name: true },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+//   const requisitions = await prisma.requisition.findMany({
+//     include: {
+//       createdBy: {
+//         select: { name: true, email: true },
+//       },
+//       approvedBy: {
+//         select: { name: true },
+//       },
+//     },
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
 
-  return NextResponse.json(requisitions);
-}
+//   return NextResponse.json(requisitions);
+// }

@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth"; // Your NextAuth session handler
+import { auth } from "@/auth";
 import prisma from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return new NextResponse("Unauthorized", { status: 403 });
   }
 
-  const requisitionId = params.id;
+  const { id } = await params; // Await the params to resolve the Promise
+
   const { status, rejectionReason } = await req.json();
 
   if (!["APPROVED", "REJECTED"].includes(status)) {
     return new NextResponse("Invalid status", { status: 400 });
   }
 
-  const updateData: any = {
+  const updateData: Prisma.RequisitionUpdateInput = {
     status,
-    approvedById: session.user.id,
+    approvedBy: {
+      connect: {
+        id: session.user.id,
+      },
+    },
   };
 
   if (status === "REJECTED") {
@@ -31,7 +37,7 @@ export async function PATCH(
   }
 
   const updated = await prisma.requisition.update({
-    where: { id: requisitionId },
+    where: { id },
     data: updateData,
   });
 
