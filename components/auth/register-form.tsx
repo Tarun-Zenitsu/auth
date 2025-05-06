@@ -1,10 +1,10 @@
 "use client";
-import * as z from "zod";
 
-import { useState, useTransition } from "react";
-import { CardWrapper } from "./card-wrapper";
+import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useTransition } from "react";
+import { RegisterSchema } from "@/schemas";
 import {
   Form,
   FormControl,
@@ -13,36 +13,46 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
-import { RegisterSchema } from "@/schemas";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { FormError } from "../form-error";
-import { FormSuccess } from "../form-success";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/form-error";
+import { FormSuccess } from "@/components/form-success";
 import { register } from "@/actions/register";
+import { CardWrapper } from "./card-wrapper";
 
 const RegisterForm = () => {
-  const [error, setError] = useState<string | undefined>("");
-  const [success, setSuccess] = useState<string | undefined>("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isPending, startTransition] = useTransition();
+
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
       email: "",
       password: "",
       name: "",
+      role: "CANDIDATE",
     },
   });
+
   const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
     setError("");
     setSuccess("");
     startTransition(() => {
-      register(values).then((date) => {
-        setError(date.error);
-        setSuccess(date.sucesss);
+      register(values).then((res) => {
+        if (res.error) setError(res.error);
+        if (res.success) setSuccess(res.success);
       });
     });
   };
+
   return (
     <CardWrapper
       headerLabel="Create an account"
@@ -63,7 +73,7 @@ const RegisterForm = () => {
                     <Input
                       disabled={isPending}
                       {...field}
-                      placeholder="john Doe"
+                      placeholder="John Doe"
                     />
                   </FormControl>
                   <FormMessage />
@@ -80,8 +90,7 @@ const RegisterForm = () => {
                     <Input
                       disabled={isPending}
                       {...field}
-                      placeholder="john.doe@example.com"
-                      type="email"
+                      placeholder="john@example.com"
                     />
                   </FormControl>
                   <FormMessage />
@@ -96,11 +105,39 @@ const RegisterForm = () => {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
-                      {...field}
-                      placeholder="******"
                       type="password"
                       disabled={isPending}
+                      {...field}
+                      placeholder="******"
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue="CANDIDATE"
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CANDIDATE">Candidate</SelectItem>
+                        <SelectItem value="RECRUITER">Recruiter</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="AUDITOR">Auditor</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
