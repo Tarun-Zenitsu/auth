@@ -15,6 +15,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: "User verified" });
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: "Failed to verify user" },
       { status: 500 }
