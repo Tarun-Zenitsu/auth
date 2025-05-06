@@ -36,7 +36,7 @@ enum UserRole {
   ADMIN
   AUDITOR
   RECRUITER
-  HIRING_MANAGER
+  HR
   CANDIDATE
 }
 
