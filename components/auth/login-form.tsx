@@ -147,6 +147,21 @@ const LoginForm = () => {
     },
   });
 
+  // const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+  //   setError("");
+  //   setSuccess("");
+
+  //   startTransition(() => {
+  //     login(values).then((data) => {
+  //       setError(data?.error);
+  //       setSuccess(data?.success);
+
+  //       if (data?.success) {
+  //         router.push("/admin"); // Change to your desired post-login page
+  //       }
+  //     });
+  //   });
+  // };
   const onSubmit = (values: z.infer<typeof LoginSchema>) => {
     setError("");
     setSuccess("");
@@ -157,7 +172,30 @@ const LoginForm = () => {
         setSuccess(data?.success);
 
         if (data?.success) {
-          router.push("/admin"); // Change to your desired post-login page
+          if (!data.isVerified) {
+            router.push("/verifyStatus");
+          } else {
+            // role-based redirection
+            switch (data.role) {
+              case "ADMIN":
+                router.push("/admin");
+                break;
+              case "HR":
+                router.push("/hr");
+                break;
+              case "RECRUITER":
+                router.push("/recruiter");
+                break;
+              case "AUDITOR":
+                router.push("/auditor");
+                break;
+              case "CANDIDATE":
+                router.push("/candidate");
+                break;
+              default:
+                router.push("/");
+            }
+          }
         }
       });
     });

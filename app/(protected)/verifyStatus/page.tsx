@@ -50,10 +50,8 @@ const VerifyStatusPage = async () => {
           <p>
             Hello, <strong>{dbUser.name}</strong>.
           </p>
-          <p>Your account is pending approval by an admin.</p>
-          <p className="text-sm text-muted-foreground">
-            Please wait, we’ll redirect you once verified.
-          </p>
+          <p>Your account is pending.</p>
+          <p className="text-sm text-muted-foreground"></p>
         </CardContent>
       </Card>
     </div>

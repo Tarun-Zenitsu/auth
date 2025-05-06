@@ -5,6 +5,7 @@ import { signIn } from "@/auth";
 import * as z from "zod";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
+import { getUserByEmail } from "@/data/user";
 
 export const login = async (values: z.infer<typeof LoginSchema>) => {
   const validatedFields = LoginSchema.safeParse(values);
@@ -14,6 +15,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
   }
 
   const { email, password } = validatedFields.data;
+  const existingUser = await getUserByEmail(email);
 
   try {
     await signIn("credentials", {
@@ -22,7 +24,11 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
       redirect: false,
     });
 
-    return { success: "Login successful!" };
+    return {
+      success: "Login successful!",
+      isVerified: existingUser?.isVerified,
+      role: existingUser?.role,
+    };
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Invalid email or password." };
