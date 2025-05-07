@@ -11,14 +11,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Share2 } from "lucide-react";
 import { NewJobForm } from "../_Components/NewJobForm";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ShareJobDialog } from "./ShareJobDialog";
+import Link from "next/link";
 
 const RecruiterDashboard = () => {
   const [open, setOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [selectedReqId, setSelectedReqId] = useState<string | null>(null);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -91,6 +95,7 @@ const RecruiterDashboard = () => {
               <th className="px-6 py-3 text-left font-semibold">Department</th>
               <th className="px-6 py-3 text-left font-semibold">Location</th>
               <th className="px-6 py-3 text-left font-semibold">Status</th>
+              <th className="px-6 py-3 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -109,6 +114,9 @@ const RecruiterDashboard = () => {
                   <td className="px-6 py-4">
                     <Skeleton className="h-4 w-16" />
                   </td>
+                  <td className="px-6 py-4">
+                    <Skeleton className="h-4 w-12" />
+                  </td>
                 </tr>
               ))
             ) : requisitions.length > 0 ? (
@@ -123,12 +131,38 @@ const RecruiterDashboard = () => {
                   <td className="px-6 py-4">{req.department}</td>
                   <td className="px-6 py-4">{req.location}</td>
                   <td className="px-6 py-4">{getStatusBadge(req.status)}</td>
+                  <td className="px-6 py-4">
+                    {req.status === "APPROVED" && !req.posted && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedReqId(req.id);
+                          setShareOpen(true);
+                        }}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
+                    )}
+                    {req.posted && (
+                      <Badge className="bg-blue-500 text-white">Posted</Badge>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link
+                      href={`/recruiter/applications/${req.id}`}
+                      className="text-blue-600 underline text-sm"
+                    >
+                      View Applications
+                    </Link>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-6 text-center text-muted-foreground"
                 >
                   No requisitions found.
@@ -138,6 +172,22 @@ const RecruiterDashboard = () => {
           </tbody>
         </table>
       </div>
+
+      <ShareJobDialog
+        requisitionId={selectedReqId}
+        open={shareOpen}
+        onClose={() => {
+          setShareOpen(false);
+          setSelectedReqId(null);
+        }}
+        onSuccess={() => {
+          setRequisitions((prev) =>
+            prev.map((req) =>
+              req.id === selectedReqId ? { ...req, posted: true } : req
+            )
+          );
+        }}
+      />
     </div>
   );
 };

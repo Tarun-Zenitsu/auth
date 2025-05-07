@@ -19,6 +19,14 @@ enum UrgencyLevel {
   HIGH
 }
 
+enum UserRole {
+  ADMIN
+  AUDITOR
+  RECRUITER
+  HIRING_MANAGER
+  CANDIDATE
+}
+
 model User {
   id           String        @id @default(uuid())
   name         String
@@ -26,18 +34,14 @@ model User {
   password     String?
   role         UserRole?      @default(CANDIDATE)
   isVerified   Boolean       @default(false)
+
+  // Relationships
   requisitions Requisition[] @relation("CreatedBy")
   approvals    Requisition[] @relation("ApprovedBy")
+  applications Application[] // 👈 Candidate applications
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-}
-
-enum UserRole {
-  ADMIN
-  AUDITOR
-  RECRUITER
-  HIRING_MANAGER
-  CANDIDATE
 }
 
 model Requisition {
@@ -53,6 +57,7 @@ model Requisition {
   salaryRange    String
   jobDescription String
 
+  // Relationships
   createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
   createdById String
 
@@ -62,6 +67,28 @@ model Requisition {
   rejectionReason String?
   status          RequisitionStatus @default(PENDING_APPROVAL)
 
+  posted            Boolean    @default(false)
+  postedAt          DateTime?
+  postChannels      String[]   // e.g. ["INTERNAL", "LINKEDIN"]
+  expiresAt         DateTime?
+
+  applications      Application[] // 👈 Applications for this job
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Application {
+  id            String      @id @default(uuid())
+  candidate     User        @relation(fields: [candidateId], references: [id])
+  candidateId   String
+
+  job           Requisition @relation(fields: [jobId], references: [id])
+  jobId         String
+  status        String     @default("SUBMITTED")
+
+  resumeLink    String
+  coverLetter   String?
+  createdAt     DateTime    @default(now())
+  
 }
