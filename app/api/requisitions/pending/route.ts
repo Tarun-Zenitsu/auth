@@ -4,7 +4,7 @@ import prisma from "@/lib/db";
 
 export async function GET() {
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !["ADMIN", "HIRING_MANAGER"].includes(session.user.role)) {
     return new NextResponse("Unauthorized", { status: 403 });
   }
 

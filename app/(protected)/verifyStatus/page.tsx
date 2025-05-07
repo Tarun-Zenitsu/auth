@@ -27,8 +27,8 @@ const VerifyStatusPage = async () => {
         redirect("/admin");
       case "RECRUITER":
         redirect("/recruiter");
-      case "HR":
-        redirect("/hr");
+      case "HIRING_MANAGER":
+        redirect("/hiringManager");
       case "AUDITOR":
         redirect("/auditor");
       case "CANDIDATE":

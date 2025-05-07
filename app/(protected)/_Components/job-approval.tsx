@@ -1,3 +1,4 @@
+// app/_Components/job-approval.tsx (Client Component)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 interface RequisitionWithCreator extends Requisition {
   createdBy: {
@@ -15,6 +18,7 @@ interface RequisitionWithCreator extends Requisition {
 }
 
 export default function JobApproval() {
+  const { data: session, status } = useSession();
   const [requisitions, setRequisitions] = useState<RequisitionWithCreator[]>(
     []
   );
@@ -27,12 +31,34 @@ export default function JobApproval() {
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // Client-side protection
   useEffect(() => {
-    axios.get("/api/requisitions/pending").then((res) => {
-      setRequisitions(res.data);
-      setIsLoading(false);
-    });
-  }, []);
+    if (status === "unauthenticated") {
+      redirect("/auth/login");
+    }
+    if (
+      status === "authenticated" &&
+      !["ADMIN", "HIRING_MANAGER"].includes(session.user.role)
+    ) {
+      redirect("/unauthorized");
+    }
+  }, [status, session]);
+
+  // Data fetching
+  useEffect(() => {
+    if (status === "authenticated") {
+      axios
+        .get("/api/requisitions/pending")
+        .then((res) => {
+          setRequisitions(res.data);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching requisitions:", error);
+          setIsLoading(false);
+        });
+    }
+  }, [status]);
 
   const handleDecision = async (
     id: string,
@@ -47,9 +73,11 @@ export default function JobApproval() {
 
       setFeedback(`Requisition ${decision.toLowerCase()} successfully.`);
       setRequisitions((prev) => prev.filter((r) => r.id !== id));
+      setTimeout(() => setFeedback(""), 3000);
     } catch (err) {
       setFeedback("Error processing decision.");
       console.error(err);
+      setTimeout(() => setFeedback(""), 3000);
     }
   };
 
@@ -64,6 +92,19 @@ export default function JobApproval() {
       </div>
     </div>
   );
+
+  if (status === "loading") {
+    return (
+      <div className="bg-white p-3 w-4xl max-w-5xl mx-auto rounded-md shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Loading authorization...</h2>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i}>{renderSkeleton()}</div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-3 w-4xl max-w-5xl mx-auto rounded-md shadow-md">
@@ -96,7 +137,7 @@ export default function JobApproval() {
 
               {showRejectInput[req.id] && (
                 <Textarea
-                  placeholder="Enter rejection reason"
+                  placeholder="Enter rejection reason (required)"
                   value={rejectionReasons[req.id] || ""}
                   onChange={(e) =>
                     setRejectionReasons({
@@ -104,10 +145,11 @@ export default function JobApproval() {
                       [req.id]: e.target.value,
                     })
                   }
+                  required
                 />
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   className="bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => handleDecision(req.id, "APPROVED")}
@@ -129,6 +171,7 @@ export default function JobApproval() {
                   <Button
                     variant="secondary"
                     onClick={() => handleDecision(req.id, "REJECTED")}
+                    disabled={!rejectionReasons[req.id]?.trim()}
                   >
                     Submit Rejection
                   </Button>
@@ -139,7 +182,15 @@ export default function JobApproval() {
         )}
       </div>
 
-      {feedback && <p className="text-green-600 mt-4">{feedback}</p>}
+      {feedback && (
+        <p
+          className={`mt-4 ${
+            feedback.includes("Error") ? "text-red-600" : "text-green-600"
+          }`}
+        >
+          {feedback}
+        </p>
+      )}
     </div>
   );
 }

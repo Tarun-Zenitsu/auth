@@ -1,15 +1,14 @@
 // "use client";
 
 // import * as z from "zod";
+// import { useRouter } from "next/navigation";
 // import { useState, useTransition } from "react";
 // import { useForm } from "react-hook-form";
 // import { zodResolver } from "@hookform/resolvers/zod";
 
-// import { login } from "@/actions/login";
 // import { LoginSchema } from "@/schemas";
+// import { login } from "@/actions/login";
 // import { CardWrapper } from "./card-wrapper";
-// import { Input } from "../ui/input";
-// import { Button } from "../ui/button";
 // import {
 //   Form,
 //   FormControl,
@@ -18,10 +17,13 @@
 //   FormLabel,
 //   FormMessage,
 // } from "@/components/ui/form";
+// import { Input } from "../ui/input";
+// import { Button } from "../ui/button";
 // import { FormError } from "../form-error";
 // import { FormSuccess } from "../form-success";
 
 // const LoginForm = () => {
+//   const router = useRouter();
 //   const [error, setError] = useState<string | undefined>("");
 //   const [success, setSuccess] = useState<string | undefined>("");
 //   const [isPending, startTransition] = useTransition();
@@ -42,6 +44,33 @@
 //       login(values).then((data) => {
 //         setError(data?.error);
 //         setSuccess(data?.success);
+
+//         if (data?.success) {
+//           if (!data.isVerified) {
+//             router.push("/verifyStatus");
+//           } else {
+//             // role-based redirection
+//             switch (data.role) {
+//               case "ADMIN":
+//                 router.push("/admin");
+//                 break;
+//               case "HIRING_MANAGER":
+//                 router.push("/hiringManager");
+//                 break;
+//               case "RECRUITER":
+//                 router.push("/recruiter");
+//                 break;
+//               case "AUDITOR":
+//                 router.push("/auditor");
+//                 break;
+//               case "CANDIDATE":
+//                 router.push("/candidate");
+//                 break;
+//               default:
+//                 router.push("/");
+//             }
+//           }
+//         }
 //       });
 //     });
 //   };
@@ -64,8 +93,8 @@
 //                   <FormLabel>Email</FormLabel>
 //                   <FormControl>
 //                     <Input
-//                       disabled={isPending}
 //                       {...field}
+//                       disabled={isPending}
 //                       placeholder="john.doe@example.com"
 //                       type="email"
 //                     />
@@ -74,7 +103,6 @@
 //                 </FormItem>
 //               )}
 //             />
-
 //             <FormField
 //               control={form.control}
 //               name="password"
@@ -84,9 +112,9 @@
 //                   <FormControl>
 //                     <Input
 //                       {...field}
-//                       placeholder="******"
-//                       type="password"
 //                       disabled={isPending}
+//                       placeholder="••••••••"
+//                       type="password"
 //                     />
 //                   </FormControl>
 //                   <FormMessage />
@@ -94,12 +122,10 @@
 //               )}
 //             />
 //           </div>
-
 //           <FormError message={error} />
 //           <FormSuccess message={success} />
-
 //           <Button type="submit" className="w-full" disabled={isPending}>
-//             {isPending ? "Logging in..." : "Login"}
+//             Login
 //           </Button>
 //         </form>
 //       </Form>
@@ -118,7 +144,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { LoginSchema } from "@/schemas";
-import { login } from "@/actions/login";
+import { signIn } from "next-auth/react";
+
 import { CardWrapper } from "./card-wrapper";
 import {
   Form,
@@ -132,6 +159,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { FormError } from "../form-error";
 import { FormSuccess } from "../form-success";
+import { validateLogin } from "@/actions/validate-login";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -147,57 +175,54 @@ const LoginForm = () => {
     },
   });
 
-  // const onSubmit = (values: z.infer<typeof LoginSchema>) => {
-  //   setError("");
-  //   setSuccess("");
-
-  //   startTransition(() => {
-  //     login(values).then((data) => {
-  //       setError(data?.error);
-  //       setSuccess(data?.success);
-
-  //       if (data?.success) {
-  //         router.push("/admin"); // Change to your desired post-login page
-  //       }
-  //     });
-  //   });
-  // };
   const onSubmit = (values: z.infer<typeof LoginSchema>) => {
     setError("");
     setSuccess("");
 
-    startTransition(() => {
-      login(values).then((data) => {
-        setError(data?.error);
-        setSuccess(data?.success);
+    startTransition(async () => {
+      const result = await validateLogin(values);
 
-        if (data?.success) {
-          if (!data.isVerified) {
-            router.push("/verifyStatus");
-          } else {
-            // role-based redirection
-            switch (data.role) {
-              case "ADMIN":
-                router.push("/admin");
-                break;
-              case "HR":
-                router.push("/hr");
-                break;
-              case "RECRUITER":
-                router.push("/recruiter");
-                break;
-              case "AUDITOR":
-                router.push("/auditor");
-                break;
-              case "CANDIDATE":
-                router.push("/candidate");
-                break;
-              default:
-                router.push("/");
-            }
-          }
-        }
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      const signInResponse = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
       });
+
+      if (signInResponse?.error) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      setSuccess("Login successful!");
+
+      if (!result.isVerified) {
+        router.push("/verifyStatus");
+      } else {
+        switch (result.role) {
+          case "ADMIN":
+            router.push("/admin");
+            break;
+          case "HIRING_MANAGER":
+            router.push("/hiringManager");
+            break;
+          case "RECRUITER":
+            router.push("/recruiter");
+            break;
+          case "AUDITOR":
+            router.push("/auditor");
+            break;
+          case "CANDIDATE":
+            router.push("/candidate");
+            break;
+          default:
+            router.push("/");
+        }
+      }
     });
   };
 
@@ -251,7 +276,7 @@ const LoginForm = () => {
           <FormError message={error} />
           <FormSuccess message={success} />
           <Button type="submit" className="w-full" disabled={isPending}>
-            Login
+            {isPending ? "Logging in..." : "Login"}
           </Button>
         </form>
       </Form>

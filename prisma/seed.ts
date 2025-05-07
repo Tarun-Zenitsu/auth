@@ -11,11 +11,11 @@ async function main() {
   console.log("🌱 Starting seed...");
 
   // Create Users
-  const hrUser = await prisma.user.create({
+  const hiringManager = await prisma.user.create({
     data: {
-      name: "Alice HR",
-      email: "alice.hr@example.com",
-      role: UserRole.HR,
+      name: "Alice Hiring Manager",
+      email: "alice.hiring@example.com",
+      role: UserRole.HIRING_MANAGER,
     },
   });
 
@@ -35,7 +35,7 @@ async function main() {
     },
   });
 
-  // Create Requisitions (use create, not createMany)
+  // Create Requisitions
   await prisma.requisition.create({
     data: {
       jobTitle: "Frontend Developer",
@@ -48,7 +48,7 @@ async function main() {
       location: "Remote",
       salaryRange: "$80k - $100k",
       jobDescription: "Looking for experienced React developer.",
-      createdBy: { connect: { id: hrUser.id } },
+      createdBy: { connect: { id: hiringManager.id } },
       approvedBy: { connect: { id: admin.id } },
       status: RequisitionStatus.APPROVED,
     },
@@ -83,7 +83,7 @@ async function main() {
       location: "Hybrid",
       salaryRange: "$70k - $85k",
       jobDescription: "Experienced UX designer needed for redesign.",
-      createdBy: { connect: { id: hrUser.id } },
+      createdBy: { connect: { id: hiringManager.id } },
       approvedBy: { connect: { id: admin.id } },
       status: RequisitionStatus.REJECTED,
       rejectionReason: "Budget not approved",
