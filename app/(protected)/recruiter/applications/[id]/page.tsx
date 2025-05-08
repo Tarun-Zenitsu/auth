@@ -6,6 +6,9 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea"; // optional for recruiter notes
+import { toast } from "sonner"; // optional for notifications
 
 interface Application {
   id: string;
@@ -13,6 +16,9 @@ interface Application {
   coverLetter?: string;
   status: string;
   createdAt: string;
+  recruiterNotes?: string;
+  reviewedBy?: { name: string };
+  reviewedAt?: string;
   candidate: {
     name: string;
     email: string;
@@ -28,6 +34,7 @@ const ApplicationDetailsPage = () => {
   const { id } = useParams();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [noteMap, setNoteMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -43,6 +50,27 @@ const ApplicationDetailsPage = () => {
 
     if (id) fetchApplications();
   }, [id]);
+
+  const handleNoteChange = (id: string, value: string) => {
+    setNoteMap((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const updateStatus = async (appId: string, newStatus: string) => {
+    try {
+      const notes = noteMap[appId] || "";
+      const res = await axios.patch(`/api/applications/${appId}/screen`, {
+        status: newStatus,
+        notes,
+      });
+      setApplications((prev) =>
+        prev.map((a) => (a.id === appId ? res.data : a))
+      );
+      toast.success(`Status updated to ${newStatus}`);
+    } catch (err) {
+      toast.error("Failed to update status");
+      console.error("Status update failed", err);
+    }
+  };
 
   return (
     <Card className="w-full max-w-6xl mx-auto mt-10">
@@ -66,7 +94,7 @@ const ApplicationDetailsPage = () => {
               key={app.id}
               className="border p-4 rounded-md shadow-sm space-y-2"
             >
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start flex-wrap gap-2">
                 <div>
                   <h3 className="font-medium text-lg">
                     {app.candidate.name} ({app.candidate.email})
@@ -75,12 +103,13 @@ const ApplicationDetailsPage = () => {
                     Applied for: {app.job.jobTitle} – {app.job.department},{" "}
                     {app.job.location}
                   </p>
+                  <p className="text-sm text-muted-foreground">
+                    Submitted on: {new Date(app.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
                 <Badge>{app.status}</Badge>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Submitted on: {new Date(app.createdAt).toLocaleDateString()}
-              </div>
+
               <a
                 href={app.resumeLink}
                 target="_blank"
@@ -89,9 +118,50 @@ const ApplicationDetailsPage = () => {
               >
                 View Resume
               </a>
+
               {app.coverLetter && (
                 <p className="italic text-sm text-muted-foreground">
                   {app.coverLetter}
+                </p>
+              )}
+
+              <Textarea
+                placeholder="Add optional notes..."
+                value={noteMap[app.id] || ""}
+                onChange={(e) => handleNoteChange(app.id, e.target.value)}
+                className="text-sm"
+              />
+
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateStatus(app.id, "SHORTLISTED")}
+                >
+                  Shortlist
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => updateStatus(app.id, "REJECTED")}
+                >
+                  Reject
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => updateStatus(app.id, "HOLD")}
+                >
+                  Hold
+                </Button>
+              </div>
+
+              {app.reviewedBy && (
+                <p className="text-xs text-muted-foreground italic">
+                  Reviewed by: {app.reviewedBy?.name} on{" "}
+                  {app.reviewedAt
+                    ? new Date(app.reviewedAt).toLocaleDateString()
+                    : "N/A"}
                 </p>
               )}
             </div>

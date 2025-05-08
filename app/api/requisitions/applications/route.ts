@@ -5,7 +5,10 @@ import prisma from "@/lib/db";
 export async function GET() {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "RECRUITER" || "ADMIN") {
+  if (
+    !session?.user ||
+    (session.user.role !== "RECRUITER" && session.user.role !== "ADMIN")
+  ) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

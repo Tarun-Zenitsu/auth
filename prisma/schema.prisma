@@ -27,21 +27,31 @@ enum UserRole {
   CANDIDATE
 }
 
+enum ApplicationStatus {
+  SUBMITTED
+  SHORTLISTED
+  REJECTED
+  HOLD
+  INTERVIEW_STAGE
+}
+
 model User {
-  id           String        @id @default(uuid())
-  name         String
-  email        String        @unique
-  password     String?
-  role         UserRole?      @default(CANDIDATE)
-  isVerified   Boolean       @default(false)
+  id         String    @id @default(uuid())
+  name       String
+  email      String    @unique
+  password   String?
+  role       UserRole? @default(CANDIDATE)
+  isVerified Boolean   @default(false)
 
   // Relationships
-  requisitions Requisition[] @relation("CreatedBy")
-  approvals    Requisition[] @relation("ApprovedBy")
-  applications Application[] // 👈 Candidate applications
+  requisitions         Requisition[]     @relation("CreatedBy")
+  approvals            Requisition[]     @relation("ApprovedBy")
+  applications         Application[] // As candidate
+  screenedApplications Application[]     @relation("ReviewedBy") // As recruiter screener
+  reviews              TechnicalReview[] // As technical reviewer
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Requisition {
@@ -67,28 +77,58 @@ model Requisition {
   rejectionReason String?
   status          RequisitionStatus @default(PENDING_APPROVAL)
 
-  posted            Boolean    @default(false)
-  postedAt          DateTime?
-  postChannels      String[]   // e.g. ["INTERNAL", "LINKEDIN"]
-  expiresAt         DateTime?
+  posted       Boolean   @default(false)
+  postedAt     DateTime?
+  postChannels String[] // e.g. ["INTERNAL", "LINKEDIN"]
+  expiresAt    DateTime?
 
-  applications      Application[] // 👈 Applications for this job
+  applications Application[] // 👈 Applications for this job
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Application {
-  id            String      @id @default(uuid())
-  candidate     User        @relation(fields: [candidateId], references: [id])
+  id            String            @id @default(uuid())
+  candidate     User              @relation(fields: [candidateId], references: [id])
   candidateId   String
 
-  job           Requisition @relation(fields: [jobId], references: [id])
+  job           Requisition       @relation(fields: [jobId], references: [id])
   jobId         String
-  status        String     @default("SUBMITTED")
+
+  status        ApplicationStatus @default(SUBMITTED)
 
   resumeLink    String
   coverLetter   String?
-  createdAt     DateTime    @default(now())
-  
+
+  // New screening metadata
+  reviewedBy     User?    @relation("ReviewedBy", fields: [reviewedById], references: [id])
+  reviewedById   String?
+  reviewedAt     DateTime?
+  recruiterNotes String?
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @default(now()) @updatedAt
+
+  reviews       TechnicalReview[] // 👈 Link to panel reviews
+}
+
+model TechnicalReview {
+  id String @id @default(uuid())
+
+  application   Application @relation(fields: [applicationId], references: [id])
+  applicationId String
+
+  reviewer   User   @relation(fields: [reviewerId], references: [id])
+  reviewerId String
+
+  rating     Int?
+  comments   String?
+  reviewedAt DateTime?
+  status     ReviewStatus @default(PENDING)
+}
+
+enum ReviewStatus {
+  PENDING
+  COMPLETED
 }

@@ -1,5 +1,14 @@
 "use client";
 
+type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | string;
+
+type Application = {
+  id: string;
+  candidateName: string;
+  candidateEmail: string;
+  status: ApplicationStatus;
+};
+
 import { useEffect, useState } from "react";
 import { Requisition } from "@prisma/client";
 import {
@@ -8,6 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Share2 } from "lucide-react";
@@ -16,9 +26,9 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ShareJobDialog } from "./ShareJobDialog";
-import Link from "next/link";
 import DashboardMetrics from "./DashboardMetrics";
 import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 
 const RecruiterDashboard = () => {
   const [open, setOpen] = useState(false);
@@ -26,6 +36,11 @@ const RecruiterDashboard = () => {
   const [selectedReqId, setSelectedReqId] = useState<string | null>(null);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [selectedApplications, setSelectedApplications] = useState<
+    Application[]
+  >([]);
+  const [appModalOpen, setAppModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchRequisitions = async () => {
@@ -42,39 +57,43 @@ const RecruiterDashboard = () => {
     fetchRequisitions();
   }, []);
 
+  const handleScreening = async (appId: string, status: string) => {
+    try {
+      await axios.patch(`/api/applications/${appId}/screen`, {
+        status,
+        notes: `Marked as ${status} by recruiter`,
+      });
+
+      setSelectedApplications((prev: Application[]) =>
+        prev.map((app) => (app.id === appId ? { ...app, status } : app))
+      );
+    } catch (err) {
+      console.error("Failed to update application status", err);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return (
-          <Badge className="bg-green-500 hover:bg-green-600 text-white">
-            Approved
-          </Badge>
-        );
+        return <Badge className="bg-green-500 text-white">Approved</Badge>;
       case "REJECTED":
-        return (
-          <Badge className="bg-red-500 hover:bg-red-600 text-white">
-            Rejected
-          </Badge>
-        );
+        return <Badge className="bg-red-500 text-white">Rejected</Badge>;
+      case "PENDING":
+        return <Badge className="bg-yellow-500 text-white">Pending</Badge>;
       default:
-        return (
-          <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
-            Pending
-          </Badge>
-        );
+        return <Badge className="bg-gray-500 text-white">{status}</Badge>;
     }
   };
 
   return (
-    <div className="p-6 space-y-6 mt-10 bg-white rounded-xl shadow-md max-w-6xl mx-auto w-full h-[82vh] flex flex-col mb-0">
+    <div className="p-6 space-y-6 mt-10 bg-white rounded-xl shadow-md max-w-6xl mx-auto w-full h-[82vh] flex flex-col">
+      {/* Header and Create Button */}
       <div className="flex justify-between items-center sticky top-0 bg-white z-10 pb-2 border-b">
         <h1 className="text-3xl font-bold">Recruiter Dashboard</h1>
-
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Job
+              <Plus className="w-4 h-4 mr-2" /> Create New Job
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -86,7 +105,7 @@ const RecruiterDashboard = () => {
         </Dialog>
       </div>
 
-      {/* Dashboard Metrics inside a Card */}
+      {/* Metrics */}
       <Card>
         <CardContent>
           <DashboardMetrics />
@@ -133,19 +152,14 @@ const RecruiterDashboard = () => {
                 </tr>
               ))
             ) : requisitions.length > 0 ? (
-              requisitions.map((req, index) => (
-                <tr
-                  key={req.id}
-                  className={`border-t ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  }`}
-                >
+              requisitions.map((req) => (
+                <tr key={req.id} className="border-t bg-white">
                   <td className="px-6 py-4 font-medium">{req.jobTitle}</td>
                   <td className="px-6 py-4">{req.department}</td>
                   <td className="px-6 py-4">{req.location}</td>
                   <td className="px-6 py-4">{getStatusBadge(req.status)}</td>
                   <td className="px-6 py-4">
-                    {req.status === "APPROVED" && !req.posted && (
+                    {req.status === "APPROVED" && !req.posted ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -154,12 +168,12 @@ const RecruiterDashboard = () => {
                           setShareOpen(true);
                         }}
                       >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share
+                        <Share2 className="w-4 h-4 mr-2" /> Share
                       </Button>
-                    )}
-                    {req.posted && (
-                      <Badge className="bg-blue-500 text-white">Posted</Badge>
+                    ) : (
+                      req.posted && (
+                        <Badge className="bg-blue-500 text-white">Posted</Badge>
+                      )
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -186,6 +200,7 @@ const RecruiterDashboard = () => {
         </table>
       </div>
 
+      {/* Share Job Dialog */}
       <ShareJobDialog
         requisitionId={selectedReqId}
         open={shareOpen}
@@ -201,6 +216,56 @@ const RecruiterDashboard = () => {
           );
         }}
       />
+
+      {/* Applications Modal */}
+      <Dialog open={appModalOpen} onOpenChange={setAppModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Applications</DialogTitle>
+            <DialogDescription>
+              Review and screen candidate applications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            {selectedApplications.length === 0 ? (
+              <p className="text-muted-foreground">No applications yet.</p>
+            ) : (
+              selectedApplications.map((app) => (
+                <div key={app.id} className="border p-4 rounded-md space-y-2">
+                  <p>
+                    <span className="font-medium">Candidate:</span>{" "}
+                    {app.candidateName}
+                  </p>
+                  <p>
+                    <span className="font-medium">Email:</span>{" "}
+                    {app.candidateEmail}
+                  </p>
+                  <p>
+                    <span className="font-medium">Status:</span>{" "}
+                    {getStatusBadge(app.status)}
+                  </p>
+                  <div className="space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleScreening(app.id, "APPROVED")}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleScreening(app.id, "REJECTED")}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
