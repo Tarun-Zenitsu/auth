@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Requisition } from "@prisma/client";
-import { FormSuccess } from "@/components/form-success";
 import {
   Dialog,
   DialogTrigger,
@@ -18,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ShareJobDialog } from "./ShareJobDialog";
 import Link from "next/link";
+import DashboardMetrics from "./DashboardMetrics";
+import { Card, CardContent } from "@/components/ui/card";
 
 const RecruiterDashboard = () => {
   const [open, setOpen] = useState(false);
@@ -65,7 +66,7 @@ const RecruiterDashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 mt-20 bg-white rounded-xl shadow-md max-w-6xl mx-auto w-full h-[80vh] flex flex-col">
+    <div className="p-6 space-y-6 mt-10 bg-white rounded-xl shadow-md max-w-6xl mx-auto w-full h-[82vh] flex flex-col mb-0">
       <div className="flex justify-between items-center sticky top-0 bg-white z-10 pb-2 border-b">
         <h1 className="text-3xl font-bold">Recruiter Dashboard</h1>
 
@@ -85,8 +86,14 @@ const RecruiterDashboard = () => {
         </Dialog>
       </div>
 
-      <FormSuccess message="You are allowed to manage job requisitions." />
+      {/* Dashboard Metrics inside a Card */}
+      <Card>
+        <CardContent>
+          <DashboardMetrics />
+        </CardContent>
+      </Card>
 
+      {/* Requisitions Table */}
       <div className="flex-1 overflow-y-auto rounded-lg border">
         <table className="min-w-full table-auto text-sm">
           <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
@@ -96,6 +103,9 @@ const RecruiterDashboard = () => {
               <th className="px-6 py-3 text-left font-semibold">Location</th>
               <th className="px-6 py-3 text-left font-semibold">Status</th>
               <th className="px-6 py-3 text-left font-semibold">Actions</th>
+              <th className="px-6 py-3 text-left font-semibold">
+                Applications
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -116,6 +126,9 @@ const RecruiterDashboard = () => {
                   </td>
                   <td className="px-6 py-4">
                     <Skeleton className="h-4 w-12" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <Skeleton className="h-4 w-20" />
                   </td>
                 </tr>
               ))
@@ -162,7 +175,7 @@ const RecruiterDashboard = () => {
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-6 text-center text-muted-foreground"
                 >
                   No requisitions found.
