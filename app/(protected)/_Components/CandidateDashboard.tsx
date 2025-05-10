@@ -67,9 +67,9 @@ const CandidateDashboard = () => {
   }, []);
 
   return (
-    <div className="h-[calc(100vh-110px)] w-full flex justify-center items-start mt-27">
+    <div className="h-full w-full flex justify-center items-start">
       {/* Subtract navbar height (64px) from 100vh */}
-      <Card className="w-full max-w-5xl h-full flex flex-col border shadow-md">
+      <Card className="w-full h-full flex flex-col">
         {/* Fixed Header */}
         <CardHeader className="sticky top-0 bg-white z-10 border-b shadow-sm">
           <h1 className="text-3xl font-bold text-center">

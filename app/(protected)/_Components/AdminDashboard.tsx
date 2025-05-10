@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@prisma/client";
 import axios from "axios";
+import AdminMetrics from "./AdminMetrics";
 
 const AdminDashboard = () => {
   const [unverifiedUsers, setUnverifiedUsers] = useState<User[]>([]);
@@ -48,12 +49,15 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Card className="w-full max-w-4xl mt-24 overflow-y-auto mb-1 mx-auto">
+    <Card className="w-full overflow-y-auto mb-1 mx-auto bg-white">
       <CardHeader>
-        <p className="text-2xl font-semibold text-center">
-          Admin Approval Dashboard
-        </p>
+        <p className="text-2xl font-semibold text-center">Admin Dashboard</p>
       </CardHeader>
+      <Card>
+        <CardContent>
+          <AdminMetrics />
+        </CardContent>
+      </Card>
 
       <CardContent className="space-y-6">
         {/* <FormSuccess message="You are allowed to approve users." /> */}

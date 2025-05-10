@@ -12,7 +12,7 @@ export default async function JobApprovalPage() {
   }
 
   return (
-    <div className="mt-15">
+    <div className="">
       <JobApproval />
     </div>
   );

@@ -107,7 +107,7 @@ export default function JobApproval() {
   }
 
   return (
-    <div className="bg-white p-3 w-4xl max-w-5xl mx-auto rounded-md shadow-md">
+    <div className="bg-white p-3 rounded-md shadow-md h-screen">
       <h2 className="text-xl font-semibold mb-4 sticky top-0 bg-white z-10">
         Pending Job Requisitions
       </h2>

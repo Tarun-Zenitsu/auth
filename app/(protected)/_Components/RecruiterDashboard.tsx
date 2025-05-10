@@ -86,7 +86,7 @@ const RecruiterDashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 mt-10 bg-white rounded-xl shadow-md max-w-6xl mx-auto w-full h-[82vh] flex flex-col">
+    <div className="p-6 space-y-6 bg-white  mx-auto w-full h-full flex flex-col">
       {/* Header and Create Button */}
       <div className="flex justify-between items-center sticky top-0 bg-white z-10 pb-2 border-b">
         <h1 className="text-3xl font-bold">Recruiter Dashboard</h1>
