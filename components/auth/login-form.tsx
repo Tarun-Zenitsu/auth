@@ -219,6 +219,9 @@ const LoginForm = () => {
           case "CANDIDATE":
             router.push("/candidate");
             break;
+          case "TECHNICAL_TEAM":
+            router.push("/technical");
+            break;
           default:
             router.push("/");
         }

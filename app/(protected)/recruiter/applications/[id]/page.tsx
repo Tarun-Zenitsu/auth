@@ -7,8 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea"; // optional for recruiter notes
-import { toast } from "sonner"; // optional for notifications
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface Application {
   id: string;
@@ -19,11 +25,11 @@ interface Application {
   recruiterNotes?: string;
   reviewedBy?: { name: string };
   reviewedAt?: string;
-  candidate: {
+  candidate?: {
     name: string;
     email: string;
   };
-  job: {
+  job?: {
     jobTitle: string;
     department: string;
     location: string;
@@ -35,6 +41,15 @@ const ApplicationDetailsPage = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [noteMap, setNoteMap] = useState<Record<string, string>>({});
+  const [techUsers, setTechUsers] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [selectedTechUserMap, setSelectedTechUserMap] = useState<
+    Record<string, string | null>
+  >({});
+  const [dropdownOpenMap, setDropdownOpenMap] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -48,7 +63,17 @@ const ApplicationDetailsPage = () => {
       }
     };
 
+    const fetchTechUsers = async () => {
+      try {
+        const res = await axios.get("/api/users/technical");
+        setTechUsers(res.data);
+      } catch (err) {
+        console.error("Failed to fetch technical users", err);
+      }
+    };
+
     if (id) fetchApplications();
+    fetchTechUsers();
   }, [id]);
 
   const handleNoteChange = (id: string, value: string) => {
@@ -72,6 +97,24 @@ const ApplicationDetailsPage = () => {
     }
   };
 
+  const assignToTechUser = async (appId: string, techUserId: string) => {
+    try {
+      const res = await axios.post(`/api/applications/assign`, {
+        applicationId: appId,
+        technicalUserId: techUserId,
+      });
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? res.data.application : app))
+      );
+      toast.success("Assigned successfully!");
+      setSelectedTechUserMap((prev) => ({ ...prev, [appId]: null }));
+      setDropdownOpenMap((prev) => ({ ...prev, [appId]: false }));
+    } catch (err) {
+      toast.error("Failed to assign");
+      console.error("Assignment failed", err);
+    }
+  };
+
   return (
     <Card className="w-full max-w-6xl mx-auto mt-10">
       <CardHeader>
@@ -92,16 +135,16 @@ const ApplicationDetailsPage = () => {
           applications.map((app) => (
             <div
               key={app.id}
-              className="border p-4 rounded-md shadow-sm space-y-2"
+              className="border p-4 rounded-md shadow-sm space-y-3"
             >
               <div className="flex justify-between items-start flex-wrap gap-2">
                 <div>
                   <h3 className="font-medium text-lg">
-                    {app.candidate.name} ({app.candidate.email})
+                    {app.candidate?.name} ({app.candidate?.email})
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Applied for: {app.job.jobTitle} – {app.job.department},{" "}
-                    {app.job.location}
+                    Applied for: {app.job?.jobTitle} – {app.job?.department},{" "}
+                    {app.job?.location}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Submitted on: {new Date(app.createdAt).toLocaleDateString()}
@@ -153,6 +196,45 @@ const ApplicationDetailsPage = () => {
                   onClick={() => updateStatus(app.id, "HOLD")}
                 >
                   Hold
+                </Button>
+
+                {/* Assignment Dropdown and Submit */}
+                <DropdownMenu
+                  open={dropdownOpenMap[app.id]}
+                  onOpenChange={(open) =>
+                    setDropdownOpenMap((prev) => ({ ...prev, [app.id]: open }))
+                  }
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Assign to...
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48">
+                    {techUsers.map((techUser) => (
+                      <DropdownMenuItem
+                        key={techUser.id}
+                        onClick={() =>
+                          setSelectedTechUserMap((prev) => ({
+                            ...prev,
+                            [app.id]: techUser.id,
+                          }))
+                        }
+                      >
+                        {techUser.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                  size="sm"
+                  disabled={!selectedTechUserMap[app.id]}
+                  onClick={() =>
+                    assignToTechUser(app.id, selectedTechUserMap[app.id]!)
+                  }
+                >
+                  Submit
                 </Button>
               </div>
 

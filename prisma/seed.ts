@@ -3,6 +3,8 @@ import {
   UserRole,
   RequisitionStatus,
   UrgencyLevel,
+  ApplicationStatus,
+  ReviewStatus,
 } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -10,83 +12,101 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting seed...");
 
-  // Create Users
-  const hiringManager = await prisma.user.create({
+  // Cleanup before seeding
+  await prisma.technicalReview.deleteMany();
+  await prisma.application.deleteMany();
+  await prisma.requisition.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Create Users with passwords
+  const admin = await prisma.user.create({
     data: {
-      name: "Alice Hiring Manager",
-      email: "alice.hiring@example.com",
-      role: UserRole.HIRING_MANAGER,
+      name: "Admin User",
+      email: "admin@example.com",
+      password: "AdminPass123!",
+      role: UserRole.ADMIN,
     },
   });
 
   const recruiter = await prisma.user.create({
     data: {
-      name: "Mark Recruiter",
-      email: "mark.recruiter@example.com",
+      name: "Recruiter User",
+      email: "recruiter@example.com",
+      password: "RecruiterPass123!",
       role: UserRole.RECRUITER,
     },
   });
 
-  const admin = await prisma.user.create({
+  const hiringManager = await prisma.user.create({
     data: {
-      name: "Sarah Admin",
-      email: "sarah.admin@example.com",
-      role: UserRole.ADMIN,
+      name: "Hiring Manager",
+      email: "manager@example.com",
+      password: "ManagerPass123!",
+      role: UserRole.HIRING_MANAGER,
     },
   });
 
-  // Create Requisitions
-  await prisma.requisition.create({
+  const techTeamUser = await prisma.user.create({
     data: {
-      jobTitle: "Frontend Developer",
+      name: "Tech Interviewer",
+      email: "tech@example.com",
+      password: "TechPass123!",
+      role: UserRole.TECHNICAL_TEAM,
+    },
+  });
+
+  const candidate = await prisma.user.create({
+    data: {
+      name: "Candidate One",
+      email: "candidate@example.com",
+      password: "CandidatePass123!",
+      role: UserRole.CANDIDATE,
+    },
+  });
+
+  // Create Requisition
+  const requisition = await prisma.requisition.create({
+    data: {
+      jobTitle: "Full Stack Developer",
       department: "Engineering",
-      budgetCode: "ENG-2025-FRONT",
-      justification: "Product expansion",
-      openings: 2,
-      skillTags: ["React", "TypeScript"],
+      budgetCode: "ENG-2025-FS",
+      justification: "Platform upgrade",
+      openings: 1,
+      skillTags: ["React", "Node.js", "PostgreSQL"],
       urgency: UrgencyLevel.HIGH,
       location: "Remote",
-      salaryRange: "$80k - $100k",
-      jobDescription: "Looking for experienced React developer.",
+      salaryRange: "$100k - $120k",
+      jobDescription: "We are hiring a full stack developer.",
       createdBy: { connect: { id: hiringManager.id } },
       approvedBy: { connect: { id: admin.id } },
       status: RequisitionStatus.APPROVED,
     },
   });
 
-  await prisma.requisition.create({
+  // Create Application
+  const application = await prisma.application.create({
     data: {
-      jobTitle: "Backend Developer",
-      department: "Engineering",
-      budgetCode: "ENG-2025-BACK",
-      justification: "System scalability",
-      openings: 1,
-      skillTags: ["Node.js", "PostgreSQL"],
-      urgency: UrgencyLevel.MEDIUM,
-      location: "On-site",
-      salaryRange: "$90k - $110k",
-      jobDescription: "Looking for Node.js backend engineer.",
-      createdBy: { connect: { id: recruiter.id } },
-      status: RequisitionStatus.PENDING_APPROVAL,
+      candidateId: candidate.id,
+      jobId: requisition.id,
+      status: ApplicationStatus.SHORTLISTED,
+      resumeLink: "https://example.com/resume.pdf",
+      coverLetter: "I am very excited to apply...",
+      reviewedById: recruiter.id,
+      reviewedAt: new Date(),
+      recruiterNotes: "Looks promising",
+      assignedToTechId: techTeamUser.id,
     },
   });
 
-  await prisma.requisition.create({
+  // Add Technical Review
+  await prisma.technicalReview.create({
     data: {
-      jobTitle: "UX Designer",
-      department: "Design",
-      budgetCode: "DES-2025-UX",
-      justification: "UI overhaul",
-      openings: 1,
-      skillTags: ["Figma", "UX Research"],
-      urgency: UrgencyLevel.LOW,
-      location: "Hybrid",
-      salaryRange: "$70k - $85k",
-      jobDescription: "Experienced UX designer needed for redesign.",
-      createdBy: { connect: { id: hiringManager.id } },
-      approvedBy: { connect: { id: admin.id } },
-      status: RequisitionStatus.REJECTED,
-      rejectionReason: "Budget not approved",
+      applicationId: application.id,
+      reviewerId: techTeamUser.id,
+      rating: 4,
+      comments: "Strong understanding of backend",
+      reviewedAt: new Date(),
+      status: ReviewStatus.COMPLETED,
     },
   });
 

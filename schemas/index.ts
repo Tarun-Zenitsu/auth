@@ -18,5 +18,6 @@ export const RegisterSchema = z.object({
     "RECRUITER",
     "HIRING_MANAGER",
     "CANDIDATE",
+    "TECHNICAL_TEAM",
   ]),
 });

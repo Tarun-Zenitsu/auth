@@ -138,6 +138,9 @@ const RegisterForm = () => {
                         </SelectItem>
                         <SelectItem value="ADMIN">Admin</SelectItem>
                         <SelectItem value="AUDITOR">Auditor</SelectItem>
+                        <SelectItem value="TECHNICAL_TEAM">
+                          TechnicalTeam
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>

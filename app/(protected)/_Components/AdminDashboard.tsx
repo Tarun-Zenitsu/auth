@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FormSuccess } from "@/components/form-success";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,7 +56,7 @@ const AdminDashboard = () => {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <FormSuccess message="You are allowed to approve users." />
+        {/* <FormSuccess message="You are allowed to approve users." /> */}
 
         {/* Unverified Users Section */}
         <div>

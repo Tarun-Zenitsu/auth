@@ -24,6 +24,7 @@ enum UserRole {
   AUDITOR
   RECRUITER
   HIRING_MANAGER
+  TECHNICAL_TEAM
   CANDIDATE
 }
 
@@ -33,6 +34,11 @@ enum ApplicationStatus {
   REJECTED
   HOLD
   INTERVIEW_STAGE
+}
+
+enum ReviewStatus {
+  PENDING
+  COMPLETED
 }
 
 model User {
@@ -46,9 +52,10 @@ model User {
   // Relationships
   requisitions         Requisition[]     @relation("CreatedBy")
   approvals            Requisition[]     @relation("ApprovedBy")
-  applications         Application[] // As candidate
+  applications         Application[]     // As candidate
   screenedApplications Application[]     @relation("ReviewedBy") // As recruiter screener
   reviews              TechnicalReview[] // As technical reviewer
+  assignedApplications Application[]     @relation("AssignedToTech") // 👈 Assigned for interview
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,7 +89,7 @@ model Requisition {
   postChannels String[] // e.g. ["INTERNAL", "LINKEDIN"]
   expiresAt    DateTime?
 
-  applications Application[] // 👈 Applications for this job
+  applications Application[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,16 +108,20 @@ model Application {
   resumeLink    String
   coverLetter   String?
 
-  // New screening metadata
+  // Screening by recruiter
   reviewedBy     User?    @relation("ReviewedBy", fields: [reviewedById], references: [id])
   reviewedById   String?
   reviewedAt     DateTime?
   recruiterNotes String?
 
+  // Assignment to technical team
+  assignedToTech     User?    @relation("AssignedToTech", fields: [assignedToTechId], references: [id])
+  assignedToTechId   String?
+
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @default(now()) @updatedAt
 
-  reviews       TechnicalReview[] // 👈 Link to panel reviews
+  reviews       TechnicalReview[]
 }
 
 model TechnicalReview {
@@ -126,9 +137,4 @@ model TechnicalReview {
   comments   String?
   reviewedAt DateTime?
   status     ReviewStatus @default(PENDING)
-}
-
-enum ReviewStatus {
-  PENDING
-  COMPLETED
 }
