@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { ApplyFormDialog } from "./ApplyFormDialog";
+import CandidateMetrics from "./CandidateMetrics";
 
 interface Job {
   id: string;
@@ -67,127 +68,168 @@ const CandidateDashboard = () => {
   }, []);
 
   return (
-    <div className="h-full w-full flex justify-center items-start">
-      {/* Subtract navbar height (64px) from 100vh */}
-      <Card className="w-full h-full flex flex-col">
-        {/* Fixed Header */}
-        <CardHeader className="sticky top-0 bg-white z-10 border-b shadow-sm">
-          <h1 className="text-3xl font-bold text-center">
-            Candidate Dashboard
-          </h1>
-          <p className="text-center text-muted-foreground text-sm mt-1">
-            View and apply to job postings, and track your application status.
-          </p>
-        </CardHeader>
+    <div className="w-full max-w-screen overflow-x-hidden">
+      {/* Metrics */}
+      <div className="px-4 py-4">
+        <Card>
+          <CardContent>
+            <CandidateMetrics />
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Scrollable Content */}
-        <CardContent className="flex-1 overflow-y-auto px-6 py-4 space-y-10">
-          {/* Jobs Section */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold">Available Job Postings</h2>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="border p-4 rounded-md">
-                    <Skeleton className="h-5 w-40 mb-2" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                ))}
-              </div>
-            ) : jobs.length > 0 ? (
-              jobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="p-4 border rounded-md shadow-sm space-y-1 bg-muted"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">{job.jobTitle}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {job.department} – {job.location}
-                      </p>
-                    </div>
-                    <Badge className="bg-blue-500 text-white">Open</Badge>
-                  </div>
-                  <div className="pt-2">
-                    <ApplyFormDialog jobId={job.id} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">
-                No jobs available at the moment.
-              </p>
-            )}
-          </section>
+      {/* Jobs Table */}
+      <div className="px-4 pb-6 space-y-2">
+        <h2 className="text-xl font-semibold">Available Job Postings</h2>
+        <div className="overflow-x-auto rounded-lg border max-w-full">
+          <table className="min-w-full table-auto text-sm">
+            <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left font-semibold">Title</th>
+                <th className="px-6 py-3 text-left font-semibold">
+                  Department
+                </th>
+                <th className="px-6 py-3 text-left font-semibold">Location</th>
+                <th className="px-6 py-3 text-left font-semibold">Apply</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i} className="border-t">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <td key={j} className="px-6 py-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : jobs.length > 0 ? (
+                jobs.map((job) => (
+                  <tr key={job.id} className="border-t bg-white">
+                    <td className="px-6 py-4 font-medium">{job.jobTitle}</td>
+                    <td className="px-6 py-4">{job.department}</td>
+                    <td className="px-6 py-4">{job.location}</td>
+                    <td className="px-6 py-4">
+                      <ApplyFormDialog jobId={job.id} />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-6 text-center text-muted-foreground"
+                  >
+                    No jobs available at the moment.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {/* Applications Section */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-semibold">My Applications</h2>
-            {appLoading ? (
-              <div className="space-y-3">
-                {[...Array(2)].map((_, i) => (
-                  <div key={i} className="border p-4 rounded-md">
-                    <Skeleton className="h-4 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-2" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
-                ))}
-              </div>
-            ) : applications.length > 0 ? (
-              applications.map((app) => (
-                <div
-                  key={app.id}
-                  className="border p-4 rounded-md shadow-sm space-y-2 bg-muted"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium text-lg">
-                        {app.job.jobTitle}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {app.job.department} – {app.job.location}
-                      </p>
-                    </div>
-                    <Badge variant="outline">{app.status}</Badge>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Applied on: {new Date(app.createdAt).toLocaleDateString()}
-                  </div>
-                  <div>
-                    <a
-                      href={app.resumeLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 text-sm underline"
-                    >
-                      View Resume
-                    </a>
-                  </div>
-                  {app.coverLetter && (
-                    <p className="italic text-sm">{app.coverLetter}</p>
-                  )}
-                  {app.recruiterNotes && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Recruiter Notes:</strong> {app.recruiterNotes}
-                    </p>
-                  )}
-                  {app.reviewedAt && (
-                    <p className="text-xs text-muted-foreground italic">
-                      Reviewed on:{" "}
-                      {new Date(app.reviewedAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">
-                You haven&apos;t applied to any jobs yet.
-              </p>
-            )}
-          </section>
-        </CardContent>
-      </Card>
+      {/* Applications Table */}
+      <div className="px-4 pb-10 space-y-2">
+        <h2 className="text-xl font-semibold">My Applications</h2>
+        <div className="overflow-x-auto rounded-lg border max-w-full">
+          <table className="min-w-full table-auto text-sm">
+            <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left font-semibold">Job Title</th>
+                <th className="px-6 py-3 text-left font-semibold">
+                  Department
+                </th>
+                <th className="px-6 py-3 text-left font-semibold">Location</th>
+                <th className="px-6 py-3 text-left font-semibold">Status</th>
+                <th className="px-6 py-3 text-left font-semibold">
+                  Applied On
+                </th>
+                <th className="px-6 py-3 text-left font-semibold">Resume</th>
+                <th className="px-6 py-3 text-left font-semibold">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {appLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i} className="border-t">
+                    {Array.from({ length: 7 }).map((_, j) => (
+                      <td key={j} className="px-6 py-4">
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : applications.length > 0 ? (
+                applications.map((app) => (
+                  <tr key={app.id} className="border-t bg-white">
+                    <td className="px-6 py-4">{app.job.jobTitle}</td>
+                    <td className="px-6 py-4">{app.job.department}</td>
+                    <td className="px-6 py-4">{app.job.location}</td>
+                    <td className="px-6 py-4">
+                      {/* Conditionally change the badge color for Shortlisted */}
+                      <Badge
+                        variant={
+                          app.status === "SHORTLISTED" ? "default" : "outline"
+                        }
+                        className={
+                          app.status === "SHORTLISTED"
+                            ? "bg-blue-500 text-white"
+                            : ""
+                        }
+                      >
+                        {app.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      {new Date(app.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 space-x-2">
+                      <a
+                        href={app.resumeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        Resume
+                      </a>
+                      {app.coverLetter && (
+                        <a
+                          href={app.coverLetter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          Cover Letter
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                      {app.recruiterNotes || "—"}
+                      {app.reviewedAt && (
+                        <div className="text-xs italic mt-1">
+                          Reviewed:{" "}
+                          {new Date(app.reviewedAt).toLocaleDateString()}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-6 text-center text-muted-foreground"
+                  >
+                    You haven&apos;t applied to any jobs yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

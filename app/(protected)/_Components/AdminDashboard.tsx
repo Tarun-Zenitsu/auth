@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@prisma/client";
@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   };
 
   const renderSkeletonUser = () => (
-    <div className="border rounded-xl p-4 flex justify-between items-center">
+    <div className="border rounded-xl p-4 flex justify-between items-center mb-4">
       <div className="space-y-1">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-3 w-64" />
@@ -49,54 +49,60 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Card className="w-full overflow-y-auto mb-1 mx-auto bg-white">
-      <CardHeader>
-        <p className="text-2xl font-semibold text-center">Admin Dashboard</p>
-      </CardHeader>
-      <Card>
-        <CardContent>
-          <AdminMetrics />
-        </CardContent>
-      </Card>
+    <Card className="w-full bg-white shadow-sm">
+      <CardContent className="p-2">
+        {/* 🟢 Metrics Section */}
+        <AdminMetrics />
 
-      <CardContent className="space-y-6">
-        {/* <FormSuccess message="You are allowed to approve users." /> */}
-
-        {/* Unverified Users Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Unverified Users</h2>
+        {/* 🔵 Unverified Users Table */}
+        <div className="mt-4 ml-5">
+          <h2 className="text-xl font-semibold mb-4">Unverified Users</h2>
 
           {isLoading ? (
-            <>
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i}>{renderSkeletonUser()}</div>
-              ))}
-            </>
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i}>{renderSkeletonUser()}</div>
+            ))
           ) : unverifiedUsers.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               No users pending verification.
             </p>
           ) : (
-            unverifiedUsers.map((user) => (
-              <div
-                key={user.id}
-                className="border rounded-xl mb-2 p-4 flex justify-between items-center gap-3"
-              >
-                <div>
-                  <p className="font-semibold">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {user.email} — Role: {user.role}
-                  </p>
-                </div>
-                <Button onClick={() => handleUserApproval(user.id)}>
-                  Verify
-                </Button>
-              </div>
-            ))
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted-foreground border-b">
+                  <th className="text-left py-2">Name</th>
+                  <th className="text-left py-2">Role</th>
+                  <th className="text-left py-2">Joined</th>
+                  <th className="py-2 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unverifiedUsers.map((user) => (
+                  <tr key={user.id} className="border-b">
+                    <td className="py-2 font-medium">{user.name}</td>
+                    <td className="py-2 capitalize">{user.role}</td>
+                    <td className="py-2">
+                      {new Date(user.createdAt).toDateString()}
+                    </td>
+                    <td className="py-2 text-center">
+                      <Button
+                        size="sm"
+                        onClick={() => handleUserApproval(user.id)}
+                        className="bg-blue-900 hover:bg-blue-800"
+                      >
+                        Verify
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {feedback && (
+            <p className="text-green-600 text-center mt-4">{feedback}</p>
           )}
         </div>
-
-        {feedback && <p className="text-green-600 text-center">{feedback}</p>}
       </CardContent>
     </Card>
   );

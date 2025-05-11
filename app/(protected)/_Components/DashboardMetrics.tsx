@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 const DashboardMetrics = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card>
+      <Card className="bg-gradient-to-r from-rose-100 to-rose-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-1">
             <Briefcase className="w-5 h-5" />
@@ -19,7 +19,7 @@ const DashboardMetrics = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-r from-green-100 to-green-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
@@ -32,7 +32,7 @@ const DashboardMetrics = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-r from-yellow-100 to-yellow-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarCheck className="w-5 h-5" />
@@ -45,7 +45,7 @@ const DashboardMetrics = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-r from-sky-100 to-sky-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart className="w-5 h-5" />
