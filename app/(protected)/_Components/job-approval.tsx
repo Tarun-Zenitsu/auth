@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Requisition } from "@prisma/client";
+import { Requisition, RequisitionStatus } from "@prisma/client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +35,7 @@ export default function JobApproval() {
   const [activeRejectId, setActiveRejectId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showApprovedOnly, setShowApprovedOnly] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") redirect("/auth/login");
@@ -49,7 +50,7 @@ export default function JobApproval() {
   useEffect(() => {
     if (status === "authenticated") {
       axios
-        .get("/api/requisitions/pending")
+        .get("/api/requisitions")
         .then((res) => setRequisitions(res.data))
         .catch((err) => console.error("Failed to fetch requisitions", err))
         .finally(() => setIsLoading(false));
@@ -75,63 +76,107 @@ export default function JobApproval() {
     }
   };
 
+  const filteredRequisitions = showApprovedOnly
+    ? requisitions.filter((r) => r.status === "APPROVED")
+    : requisitions;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
+      {/* Metrics */}
       <Card className="bg-white shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-1">
           <HiringManagerMetrics />
         </CardContent>
       </Card>
 
+      {/* Requisition Table */}
       <Card className="bg-white shadow-sm">
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-6">
-            Pending Job Requisitions
-          </h2>
+        <CardContent>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">All Job Requisitions</h2>
+            <Button
+              variant="outline"
+              onClick={() => setShowApprovedOnly(!showApprovedOnly)}
+            >
+              {showApprovedOnly ? "Show All" : "Show Approved Only"}
+            </Button>
+          </div>
 
           {isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                <Skeleton key={i} className="h-8 w-full rounded-lg" />
               ))}
             </div>
-          ) : requisitions.length === 0 ? (
+          ) : filteredRequisitions.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No pending requisitions.
+              No requisitions found.
             </p>
           ) : (
-            <div className="grid gap-4">
-              {requisitions.map((req) => (
-                <Card key={req.id} className="border p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-medium">{req.jobTitle}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Department: {req.department}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Created By: {req.createdBy.name}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleDecision(req.id, "APPROVED")}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setActiveRejectId(req.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+            <div className="overflow-auto">
+              <table className="min-w-full border text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border px-4 py-2 text-left">Job Title</th>
+                    <th className="border px-4 py-2 text-left">Department</th>
+                    <th className="border px-4 py-2 text-left">Location</th>
+                    <th className="border px-4 py-2 text-left">Salary</th>
+                    <th className="border px-4 py-2 text-left">Created By</th>
+                    <th className="border px-4 py-2 text-left">Status</th>
+                    <th className="border px-4 py-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRequisitions.map((req) => (
+                    <tr key={req.id} className="hover:bg-gray-50">
+                      <td className="border px-4 py-2">{req.jobTitle}</td>
+                      <td className="border px-4 py-2">{req.department}</td>
+                      <td className="border px-4 py-2">{req.location}</td>
+                      <td className="border px-4 py-2">
+                        {req.salaryRange || "Not specified"}
+                      </td>
+                      <td className="border px-4 py-2">{req.createdBy.name}</td>
+                      <td className="border px-4 py-2">
+                        <span
+                          className={
+                            req.status === "APPROVED"
+                              ? "text-green-600"
+                              : req.status === "REJECTED"
+                              ? "text-red-600"
+                              : "text-yellow-600"
+                          }
+                        >
+                          {req.status === "APPROVED"
+                            ? "Approved"
+                            : req.status === "REJECTED"
+                            ? "Rejected"
+                            : "Pending"}
+                        </span>
+                      </td>
+                      <td className="border px-4 py-2">
+                        {req.status === RequisitionStatus.PENDING_APPROVAL && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleDecision(req.id, "APPROVED")}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setActiveRejectId(req.id)}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 

@@ -15,7 +15,7 @@ export default function Home() {
             className=" rounded-md object-cover"
           />
 
-          <h1 className="text-5xl font-semibold text-white">Auth</h1>
+          <h1 className="text-5xl font-semibold text-white">Home</h1>
         </div>
       </div>
       <div>

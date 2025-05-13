@@ -35,10 +35,10 @@ export default function Menue() {
     ...(roleLink ? [roleLink] : []),
     { label: "Statistics", path: "/statistics" },
     { label: "Settings", path: "/settings" },
-    // { label: "Recruiter", path: "/recruiter" },
-    // { label: "Hiring Manager", path: "/hiringManager" },
-    // { label: "Technical Team", path: "/technical" },
-    // { label: "Candidate", path: "/candidate" },
+    { label: "Recruiter", path: "/recruiter" },
+    { label: "Hiring Manager", path: "/hiringManager" },
+    { label: "Technical Team", path: "/technical" },
+    { label: "Candidate", path: "/candidate" },
   ];
 
   // Remove duplicates by path

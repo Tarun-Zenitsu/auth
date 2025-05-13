@@ -1,10 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Briefcase, Users, BarChart, User } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import axios from "axios";
 
 const AdminMetrics = () => {
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    pendingUsers: 0,
+    openJobs: 0,
+    closingSoon: 0,
+    totalCandidates: 0,
+    interviewing: 0,
+    applicationProgress: 0,
+  });
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await axios.get("/api/admin/metrics");
+        setMetrics(res.data);
+      } catch (err) {
+        console.error("Error fetching metrics", err);
+      }
+    };
+    fetchMetrics();
+  }, []);
+
   return (
     <div className="px-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -16,8 +40,12 @@ const AdminMetrics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-gray-900">120</p>
-            <p className="text-sm text-muted-foreground">3 Pending</p>
+            <p className="text-2xl font-semibold text-gray-900">
+              {metrics.totalUsers}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {metrics.pendingUsers} Pending
+            </p>
           </CardContent>
         </Card>
 
@@ -29,8 +57,12 @@ const AdminMetrics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-gray-900">8</p>
-            <p className="text-sm text-muted-foreground">3 Closing Soon</p>
+            <p className="text-2xl font-semibold text-gray-900">
+              {metrics.openJobs}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {metrics.closingSoon} Closing Soon
+            </p>
           </CardContent>
         </Card>
 
@@ -42,8 +74,12 @@ const AdminMetrics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-gray-900">52</p>
-            <p className="text-sm text-muted-foreground">10 Interviewing</p>
+            <p className="text-2xl font-semibold text-gray-900">
+              {metrics.totalCandidates}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {metrics.interviewing} Interviewing
+            </p>
           </CardContent>
         </Card>
 
@@ -55,8 +91,10 @@ const AdminMetrics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Progress value={65} />
-            <p className="text-sm text-muted-foreground mt-2">65% Completed</p>
+            <Progress value={metrics.applicationProgress} />
+            <p className="text-sm text-muted-foreground mt-2">
+              {metrics.applicationProgress}% Completed
+            </p>
           </CardContent>
         </Card>
       </div>

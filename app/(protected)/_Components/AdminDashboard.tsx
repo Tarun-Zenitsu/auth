@@ -8,95 +8,133 @@ import { User } from "@prisma/client";
 import axios from "axios";
 import AdminMetrics from "./AdminMetrics";
 
+const LIMIT = 10;
+
 const AdminDashboard = () => {
-  const [unverifiedUsers, setUnverifiedUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const userRes = await axios.get("/api/users/unverified");
-        setUnverifiedUsers(userRes.data);
+        setIsLoading(true);
+        const res = await axios.get("/api/users/all", {
+          params: { page, limit: LIMIT },
+        });
+        setUsers(res.data.users);
+        setTotal(res.data.total);
       } catch (error) {
         console.error("Failed to fetch users", error);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchUsers();
-  }, []);
+  }, [page]);
 
   const handleUserApproval = async (userId: string) => {
     try {
       await axios.patch(`/api/users/${userId}/verify`);
-      setFeedback("User approved successfully.");
-      setUnverifiedUsers((prev) => prev.filter((u) => u.id !== userId));
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isVerified: true } : u))
+      );
+      setFeedback("User verified successfully.");
     } catch (err) {
       setFeedback("Error verifying user.");
       console.error(err);
     }
   };
 
-  const renderSkeletonUser = () => (
-    <div className="border rounded-xl p-4 flex justify-between items-center mb-4">
-      <div className="space-y-1">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-64" />
-      </div>
-      <Skeleton className="h-8 w-20" />
-    </div>
-  );
+  const totalPages = Math.ceil(total / LIMIT);
 
   return (
     <Card className="w-full bg-white shadow-sm">
       <CardContent className="p-2">
-        {/* 🟢 Metrics Section */}
         <AdminMetrics />
 
-        {/* 🔵 Unverified Users Table */}
         <div className="mt-4 ml-5">
-          <h2 className="text-xl font-semibold mb-4">Unverified Users</h2>
+          <h2 className="text-xl font-semibold mb-4">All Users</h2>
 
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i}>{renderSkeletonUser()}</div>
+            Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full my-2" />
             ))
-          ) : unverifiedUsers.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No users pending verification.
-            </p>
+          ) : users.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No users found.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-muted-foreground border-b">
-                  <th className="text-left py-2">Name</th>
-                  <th className="text-left py-2">Role</th>
-                  <th className="text-left py-2">Joined</th>
-                  <th className="py-2 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unverifiedUsers.map((user) => (
-                  <tr key={user.id} className="border-b">
-                    <td className="py-2 font-medium">{user.name}</td>
-                    <td className="py-2 capitalize">{user.role}</td>
-                    <td className="py-2">
-                      {new Date(user.createdAt).toDateString()}
-                    </td>
-                    <td className="py-2 text-center">
-                      <Button
-                        size="sm"
-                        onClick={() => handleUserApproval(user.id)}
-                        className="bg-blue-900 hover:bg-blue-800"
-                      >
-                        Verify
-                      </Button>
-                    </td>
+            <>
+              <table className="w-full text-sm mb-4">
+                <thead>
+                  <tr className="text-muted-foreground border-b">
+                    <th className="text-left py-2">Name</th>
+                    <th className="text-left py-2">Email</th>
+                    <th className="text-left py-2">Role</th>
+                    <th className="text-left py-2">Joined</th>
+                    <th className="text-left py-2">Status</th>
+                    <th className="py-2 text-center">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b">
+                      <td className="py-2 font-medium">{user.name}</td>
+                      <td className="py-2">{user.email}</td>
+                      <td className="py-2 capitalize">{user.role}</td>
+                      <td className="py-2">
+                        {new Date(user.createdAt).toDateString()}
+                      </td>
+                      <td className="py-2">
+                        {user.isVerified ? (
+                          <span className="text-green-600 font-medium">
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="text-yellow-600 font-medium">
+                            Unverified
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 text-center">
+                        {!user.isVerified && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUserApproval(user.id)}
+                            className="bg-blue-900 hover:bg-blue-800"
+                          >
+                            Verify
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* 🔀 Pagination Controls */}
+              <div className="flex justify-between items-center px-2">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
           )}
 
           {feedback && (

@@ -1,9 +1,49 @@
-// components/recruiter/DashboardMetrics.tsx
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Briefcase, Users, CalendarCheck, BarChart } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import axios from "axios";
 
 const DashboardMetrics = () => {
+  const [metrics, setMetrics] = useState({
+    openPositions: 0,
+    closingSoon: 0,
+    totalCandidates: 0,
+    interviewing: 0,
+    interviewsToday: 0,
+    nextInterviewTime: "",
+    progress: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axios.get("/api/requisitions/metrics");
+        setMetrics(response.data);
+      } catch (error) {
+        console.error("Failed to fetch metrics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="h-[120px] animate-pulse bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card className="bg-gradient-to-r from-rose-100 to-rose-200">
@@ -14,8 +54,10 @@ const DashboardMetrics = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-semibold">8</p>
-          <p className="text-sm text-muted-foreground">3 Closing Soon</p>
+          <p className="text-2xl font-semibold">{metrics.openPositions}</p>
+          <p className="text-sm text-muted-foreground">
+            {metrics.closingSoon} Closing Soon
+          </p>
         </CardContent>
       </Card>
 
@@ -27,8 +69,10 @@ const DashboardMetrics = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-semibold">52</p>
-          <p className="text-sm text-muted-foreground">10 Interviewing</p>
+          <p className="text-2xl font-semibold">{metrics.totalCandidates}</p>
+          <p className="text-sm text-muted-foreground">
+            {metrics.interviewing} Interviewing
+          </p>
         </CardContent>
       </Card>
 
@@ -40,8 +84,10 @@ const DashboardMetrics = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-semibold">3</p>
-          <p className="text-sm text-muted-foreground">Next at 2:00 PM</p>
+          <p className="text-2xl font-semibold">{metrics.interviewsToday}</p>
+          <p className="text-sm text-muted-foreground">
+            Next at {metrics.nextInterviewTime || "—"}
+          </p>
         </CardContent>
       </Card>
 
@@ -53,8 +99,10 @@ const DashboardMetrics = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Progress value={65} />
-          <p className="text-sm text-muted-foreground mt-2">65% Completed</p>
+          <Progress value={metrics.progress} />
+          <p className="text-sm text-muted-foreground mt-2">
+            {metrics.progress}% Completed
+          </p>
         </CardContent>
       </Card>
     </div>

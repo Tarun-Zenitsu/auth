@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface ApplyFormDialogProps {
   jobId: string;
@@ -20,6 +21,7 @@ interface ApplyFormDialogProps {
 
 export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     candidateName: "",
     email: "",
@@ -29,17 +31,34 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       await axios.post("/api/applications", {
         ...form,
         jobId,
       });
+
       toast.success("Application submitted!");
       setOpen(false);
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to apply.");
+      setForm({
+        candidateName: "",
+        email: "",
+        resumeLink: "",
+        coverLetter: "",
+      });
+    } catch (err: unknown) {
+      const error = err as AxiosError; // Type the error to AxiosError
+      if (
+        error?.response?.status === 400 &&
+        error?.response?.data === "You have already applied for this job"
+      ) {
+        toast.warning("You have already applied for this job.");
+      } else {
+        toast.error("Failed to submit application.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,7 +69,7 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Apply for Job</DialogTitle>
+          <DialogTitle>Apply for this Job</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -83,7 +102,8 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
               setForm((f) => ({ ...f, coverLetter: e.target.value }))
             }
           />
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Application
           </Button>
         </form>

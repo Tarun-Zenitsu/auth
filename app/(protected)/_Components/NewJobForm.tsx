@@ -25,13 +25,14 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
     department: "",
     budgetCode: "",
     justification: "",
-    skillTags: "",
+    skillTags: [] as string[],
     urgency: "",
     location: "",
     salaryRange: "",
     jobDescription: "",
   });
 
+  const [skillInput, setSkillInput] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,10 +57,6 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          skillTags: formData.skillTags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter(Boolean),
           createdById: user?.id,
           openings: 1,
         }),
@@ -72,12 +69,13 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
           department: "",
           budgetCode: "",
           justification: "",
-          skillTags: "",
+          skillTags: [],
           urgency: "",
           location: "",
           salaryRange: "",
           jobDescription: "",
         });
+        setSkillInput("");
         onSuccess?.();
       } else {
         console.error("Failed to create job");
@@ -144,6 +142,7 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         </SelectContent>
       </Select>
 
+      {/* Justification */}
       <Textarea
         name="justification"
         value={formData.justification}
@@ -151,6 +150,8 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         placeholder="Justification"
         rows={3}
       />
+
+      {/* Job Description */}
       <Textarea
         name="jobDescription"
         value={formData.jobDescription}
@@ -158,12 +159,54 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         placeholder="Job Description"
         rows={4}
       />
-      <Input
-        name="skillTags"
-        value={formData.skillTags}
-        onChange={handleChange}
-        placeholder="e.g., React, Node.js"
-      />
+
+      {/* Skill Tags as Chips */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Skills</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {formData.skillTags.map((tag, index) => (
+            <span
+              key={index}
+              className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full flex items-center gap-1"
+            >
+              {tag}
+              <button
+                type="button"
+                className="text-blue-500 hover:text-red-600"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    skillTags: prev.skillTags.filter((_, i) => i !== index),
+                  }))
+                }
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <Input
+          type="text"
+          value={skillInput}
+          onChange={(e) => setSkillInput(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.key === "Enter" || e.key === ",") && skillInput.trim()) {
+              e.preventDefault();
+              const newSkill = skillInput.trim();
+              if (!formData.skillTags.includes(newSkill)) {
+                setFormData((prev) => ({
+                  ...prev,
+                  skillTags: [...prev.skillTags, newSkill],
+                }));
+              }
+              setSkillInput("");
+            }
+          }}
+          placeholder="Type a skill and press Enter or comma"
+        />
+      </div>
+
+      {/* Urgency Dropdown */}
       <Select
         onValueChange={(val) => handleSelectChange("urgency", val)}
         defaultValue=""
@@ -178,12 +221,16 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
           <SelectItem value="CRITICAL">Critical</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Location */}
       <Input
         name="location"
         value={formData.location}
         onChange={handleChange}
         placeholder="Location (e.g., Remote)"
       />
+
+      {/* Salary Range */}
       <Input
         name="salaryRange"
         value={formData.salaryRange}
@@ -191,6 +238,7 @@ export const NewJobForm: React.FC<NewJobFormProps> = ({ onSuccess }) => {
         placeholder="Salary Range (e.g., $80k - $100k)"
       />
 
+      {/* Submit Button */}
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Posting..." : "Post Job"}

@@ -134,10 +134,10 @@ const RegisterForm = () => {
                       <SelectContent>
                         <SelectItem value="CANDIDATE">Candidate</SelectItem>
                         <SelectItem value="RECRUITER">Recruiter</SelectItem>
-                        <SelectItem value="HIRING_MANAGER">
+                        {/* <SelectItem value="HIRING_MANAGER">
                           HiringManager
                         </SelectItem>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem> */}
                         <SelectItem value="AUDITOR">Auditor</SelectItem>
                         <SelectItem value="TECHNICAL_TEAM">
                           TechnicalTeam

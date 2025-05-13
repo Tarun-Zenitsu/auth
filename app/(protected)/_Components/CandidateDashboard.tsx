@@ -26,6 +26,7 @@ interface Application {
   recruiterNotes?: string;
   reviewedAt?: string;
   job: {
+    id: string;
     jobTitle: string;
     department: string;
     location: string;
@@ -105,16 +106,28 @@ const CandidateDashboard = () => {
                   </tr>
                 ))
               ) : jobs.length > 0 ? (
-                jobs.map((job) => (
-                  <tr key={job.id} className="border-t bg-white">
-                    <td className="px-6 py-4 font-medium">{job.jobTitle}</td>
-                    <td className="px-6 py-4">{job.department}</td>
-                    <td className="px-6 py-4">{job.location}</td>
-                    <td className="px-6 py-4">
-                      <ApplyFormDialog jobId={job.id} />
-                    </td>
-                  </tr>
-                ))
+                jobs.map((job) => {
+                  const alreadyApplied = applications.some(
+                    (app) => app.job.id === job.id
+                  );
+
+                  return (
+                    <tr key={job.id} className="border-t bg-white">
+                      <td className="px-6 py-4 font-medium">{job.jobTitle}</td>
+                      <td className="px-6 py-4">{job.department}</td>
+                      <td className="px-6 py-4">{job.location}</td>
+                      <td className="px-6 py-4">
+                        {alreadyApplied ? (
+                          <span className="text-sm text-muted-foreground">
+                            Applied
+                          </span>
+                        ) : (
+                          <ApplyFormDialog jobId={job.id} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
@@ -168,7 +181,6 @@ const CandidateDashboard = () => {
                     <td className="px-6 py-4">{app.job.department}</td>
                     <td className="px-6 py-4">{app.job.location}</td>
                     <td className="px-6 py-4">
-                      {/* Conditionally change the badge color for Shortlisted */}
                       <Badge
                         variant={
                           app.status === "SHORTLISTED" ? "default" : "outline"

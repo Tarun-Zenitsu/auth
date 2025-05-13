@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Share2 } from "lucide-react";
-import { NewJobForm } from "../_Components/NewJobForm";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import { ShareJobDialog } from "./ShareJobDialog";
 import DashboardMetrics from "./DashboardMetrics";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { NewJobForm } from "./NewJobForm";
 
 type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | string;
 
@@ -42,46 +42,49 @@ const RecruiterDashboard = () => {
   const [appModalOpen, setAppModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchRequisitions = async () => {
-      try {
-        const res = await axios.get("/api/requisitions");
-        setRequisitions(res.data);
-      } catch (err) {
-        console.error("Failed to load requisitions", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchRequisitions();
   }, []);
 
-  const handleScreening = async (appId: string, status: string) => {
+  const fetchRequisitions = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axios.get("/api/requisitions");
+      setRequisitions(res.data);
+    } catch (err) {
+      console.error("Failed to load requisitions", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleScreening = async (appId: string, status: ApplicationStatus) => {
     try {
       await axios.patch(`/api/applications/${appId}/screen`, {
         status,
         notes: `Marked as ${status} by recruiter`,
       });
-
-      setSelectedApplications((prev) =>
-        prev.map((app) => (app.id === appId ? { ...app, status } : app))
+      setSelectedApplications((apps) =>
+        apps.map((app) => (app.id === appId ? { ...app, status } : app))
       );
     } catch (err) {
       console.error("Failed to update application status", err);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return <Badge className="bg-green-500 text-white">Approved</Badge>;
-      case "REJECTED":
-        return <Badge className="bg-red-500 text-white">Rejected</Badge>;
-      case "PENDING":
-        return <Badge className="bg-yellow-500 text-white">Pending</Badge>;
-      default:
-        return <Badge className="bg-gray-500 text-white">{status}</Badge>;
-    }
+  const getStatusBadge = (status: ApplicationStatus) => {
+    const badgeColor =
+      {
+        APPROVED: "bg-green-500",
+        REJECTED: "bg-red-500",
+        PENDING: "bg-yellow-500",
+      }[status] || "bg-gray-500";
+
+    return <Badge className={`${badgeColor} text-white`}>{status}</Badge>;
+  };
+
+  const handleShareClick = (reqId: string) => {
+    setSelectedReqId(reqId);
+    setShareOpen(true);
   };
 
   return (
@@ -99,7 +102,12 @@ const RecruiterDashboard = () => {
             <DialogHeader>
               <DialogTitle>Create a New Job Posting</DialogTitle>
             </DialogHeader>
-            <NewJobForm onSuccess={() => setOpen(false)} />
+            <NewJobForm
+              onSuccess={() => {
+                setOpen(false);
+                fetchRequisitions();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -113,7 +121,7 @@ const RecruiterDashboard = () => {
         </Card>
       </div>
 
-      {/* Table */}
+      {/* Requisition Table */}
       <div className="px-4 pb-4">
         <div className="overflow-x-auto rounded-lg border max-w-full">
           <table className="min-w-full table-auto text-sm">
@@ -133,26 +141,15 @@ const RecruiterDashboard = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                Array.from({ length: 3 }).map((_, idx) => (
+                [...Array(3)].map((_, idx) => (
                   <tr key={idx} className="border-t">
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-32" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-24" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-20" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-16" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-12" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-20" />
-                    </td>
+                    {Array(6)
+                      .fill(0)
+                      .map((_, tdIdx) => (
+                        <td key={tdIdx} className="px-6 py-4">
+                          <Skeleton className="h-4 w-24" />
+                        </td>
+                      ))}
                   </tr>
                 ))
               ) : requisitions.length > 0 ? (
@@ -173,20 +170,13 @@ const RecruiterDashboard = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setSelectedReqId(req.id);
-                            setShareOpen(true);
-                          }}
+                          onClick={() => handleShareClick(req.id)}
                         >
                           <Share2 className="w-4 h-4 mr-2" /> Share
                         </Button>
-                      ) : (
-                        req.posted && (
-                          <Badge className="bg-blue-500 text-white">
-                            Posted
-                          </Badge>
-                        )
-                      )}
+                      ) : req.posted ? (
+                        <Badge className="bg-blue-500 text-white">Posted</Badge>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4">
                       <Link
@@ -239,6 +229,7 @@ const RecruiterDashboard = () => {
               Review and screen candidate applications.
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
             {selectedApplications.length === 0 ? (
               <p className="text-muted-foreground">No applications yet.</p>
