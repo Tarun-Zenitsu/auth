@@ -34,7 +34,7 @@ export default function Menue() {
   const allTabs = [
     ...(roleLink ? [roleLink] : []),
     { label: "Statistics", path: "/statistics" },
-    { label: "Settings", path: "/settings" },
+    // { label: "Settings", path: "/settings" },
     { label: "Recruiter", path: "/recruiter" },
     { label: "Hiring Manager", path: "/hiringManager" },
     { label: "Technical Team", path: "/technical" },

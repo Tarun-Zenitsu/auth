@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !["ADMIN", "HIRING_MANAGER"].includes(session.user.role)) {
     return new NextResponse("Unauthorized", { status: 403 });
   }
 

@@ -6,6 +6,7 @@ import RecruiterDashboard from "../_Components/RecruiterDashboard";
 
 export default async function RecruiterPage() {
   const session = await auth();
+  console.log(session);
 
   // ✅ Protect route
   if (

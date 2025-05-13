@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import TechnicalDashboardMetrics from "./TechnicalDashboardMetrics";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface AssignedApplication {
   id: string;
@@ -37,13 +38,18 @@ const getStatusBadge = (status: RequisitionStatus) => {
 };
 
 export default function TechnicalDashboard() {
+  const user = useCurrentUser();
   const [applications, setApplications] = useState<AssignedApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const res = await fetch("/api/technical/assigned-applications");
+        const res = await fetch("/api/technical/assigned-applications", {
+          headers: {
+            "X-User-Role": user?.role || "", // Send user role to backend
+          },
+        });
         if (!res.ok) throw new Error("Failed to load assigned applications");
         const data = await res.json();
         setApplications(data);
@@ -54,13 +60,14 @@ export default function TechnicalDashboard() {
       }
     };
 
-    fetchApplications();
-  }, []);
+    if (user) {
+      fetchApplications();
+    }
+  }, [user]);
 
   return (
     <div className="w-full max-w-screen overflow-x-hidden">
       {/* Header */}
-
       {/* Metrics */}
       <div className="px-4 py-4">
         <Card>
