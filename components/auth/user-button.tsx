@@ -89,27 +89,25 @@ const UserButton = () => {
 
       {/* User Info & Avatar Dropdown */}
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 cursor-pointer">
-            {/* Name and Role */}
-            <div className="flex flex-col items-start text-left text-sm leading-tight">
-              <span className="text-white font-bold text-base">
-                {user?.name}
-              </span>
-              <span className="text-xs text-gray-300">{user?.role}</span>
-            </div>
+        <div className="flex items-center gap-2">
+          {/* Name and Role (static, not clickable) */}
+          <div className="flex flex-col items-start text-left text-sm leading-tight">
+            <span className="text-white font-bold text-base">{user?.name}</span>
+            <span className="text-xs text-gray-300">{user?.role}</span>
+          </div>
 
-            {/* Avatar */}
-            <div className="rounded-full transition hover:bg-muted p-1">
+          {/* Avatar (clickable trigger) */}
+          <DropdownMenuTrigger asChild>
+            <button className="rounded-full transition hover:bg-muted p-1">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.image || ""} />
                 <AvatarFallback className="bg-sky-500">
                   <FaUser className="text-white" />
                 </AvatarFallback>
               </Avatar>
-            </div>
-          </button>
-        </DropdownMenuTrigger>
+            </button>
+          </DropdownMenuTrigger>
+        </div>
 
         <DropdownMenuContent className="w-40" align="end">
           <LogoutButton>
