@@ -31,17 +31,22 @@ export default function Menue() {
 
   const roleLink = userRole ? roleRouteMap[userRole] : null;
 
-  const allTabs = [
-    ...(roleLink ? [roleLink] : []),
-    { label: "Statistics", path: "/statistics" },
-    // { label: "Settings", path: "/settings" },
-    { label: "Recruiter", path: "/recruiter" },
-    { label: "Hiring Manager", path: "/hiringManager" },
-    { label: "Technical Team", path: "/technical" },
-    { label: "Candidate", path: "/candidate" },
-  ];
+  // Show all tabs for ADMIN, limited tabs for others
+  const allTabs =
+    userRole === "ADMIN"
+      ? [
+          roleRouteMap.ADMIN,
+          { label: "Statistics", path: "/statistics" },
+          { label: "Recruiter", path: "/recruiter" },
+          { label: "Hiring Manager", path: "/hiringManager" },
+          { label: "Technical Team", path: "/technical" },
+          { label: "Candidate", path: "/candidate" },
+        ]
+      : roleLink
+      ? [roleLink, { label: "Statistics", path: "/statistics" }]
+      : [];
 
-  // Remove duplicates by path
+  // Remove duplicate paths
   const seenPaths = new Set<string>();
   const tabs = allTabs.filter((tab) => {
     if (seenPaths.has(tab.path)) return false;

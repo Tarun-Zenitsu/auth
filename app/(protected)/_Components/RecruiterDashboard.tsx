@@ -156,7 +156,12 @@ const RecruiterDashboard = () => {
                 requisitions.map((req) => (
                   <tr key={req.id} className="border-t bg-white">
                     <td className="px-6 py-4 font-medium break-words max-w-[200px]">
-                      {req.jobTitle}
+                      <Link
+                        href={`/recruiter/jobs/${req.id}`}
+                        className="text-blue-600 underline hover:text-blue-800"
+                      >
+                        {req.jobTitle}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 break-words max-w-[180px]">
                       {req.department}
@@ -183,7 +188,7 @@ const RecruiterDashboard = () => {
                         href={`/recruiter/applications/${req.id}`}
                         className="text-blue-600 underline text-sm"
                       >
-                        View Applications
+                        View Applicants
                       </Link>
                     </td>
                   </tr>
