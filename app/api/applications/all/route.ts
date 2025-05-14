@@ -1,3 +1,5 @@
+// /api/applications/all.ts
+
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
@@ -5,22 +7,22 @@ import prisma from "@/lib/db";
 export async function GET() {
   const session = await auth();
 
-  if (!session || session.user.role !== "CANDIDATE") {
+  if (!session || session.user.role !== "ADMIN") {
     return new NextResponse("Unauthorized", { status: 403 });
   }
 
   try {
     const applications = await prisma.application.findMany({
-      where: {
-        candidateId: session.user.id,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       include: {
+        candidate: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
         job: {
           select: {
-            id: true, // ✅ Include job ID for matching
             jobTitle: true,
             department: true,
             location: true,
@@ -31,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json(applications);
   } catch (error) {
-    console.error("Error fetching candidate applications:", error);
+    console.error("Error fetching all applications:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

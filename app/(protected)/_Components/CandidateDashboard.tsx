@@ -9,14 +9,6 @@ import { toast } from "sonner";
 import { ApplyFormDialog } from "./ApplyFormDialog";
 import CandidateMetrics from "./CandidateMetrics";
 
-interface Job {
-  id: string;
-  jobTitle: string;
-  department: string;
-  location: string;
-  createdAt: string;
-}
-
 interface Application {
   id: string;
   resumeLink: string;
@@ -25,52 +17,75 @@ interface Application {
   createdAt: string;
   recruiterNotes?: string;
   reviewedAt?: string;
+  candidate?: {
+    name: string;
+    email: string;
+  };
   job: {
-    id: string;
     jobTitle: string;
     department: string;
     location: string;
   };
 }
 
+interface Job {
+  id: string;
+  jobTitle: string;
+  department: string;
+  location: string;
+  createdAt: string;
+}
+
 const CandidateDashboard = () => {
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [appLoading, setAppLoading] = useState(true);
 
   useEffect(() => {
-    const fetchJobs = async () => {
+    const getSession = async () => {
       try {
-        const res = await axios.get("/api/jobs/available");
-        setJobs(res.data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to load jobs");
-      } finally {
-        setIsLoading(false);
+        const res = await axios.get("/api/auth/session");
+        setUserRole(res.data.user.role);
+      } catch {
+        toast.error("Failed to fetch user session");
       }
     };
 
-    const fetchApplications = async () => {
+    getSession();
+  }, []);
+
+  useEffect(() => {
+    if (!userRole) return;
+
+    const fetchData = async () => {
       try {
-        const res = await axios.get("/api/applications/my");
-        setApplications(res.data);
+        if (userRole === "CANDIDATE") {
+          const [jobRes, appRes] = await Promise.all([
+            axios.get("/api/jobs/available"),
+            axios.get("/api/applications/my"),
+          ]);
+          setJobs(jobRes.data);
+          setApplications(appRes.data);
+        } else if (userRole === "ADMIN") {
+          const res = await axios.get("/api/applications/all");
+          setApplications(res.data);
+        }
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load applications");
+        toast.error("Failed to load data");
       } finally {
+        setIsLoading(false);
         setAppLoading(false);
       }
     };
 
-    fetchJobs();
-    fetchApplications();
-  }, []);
+    fetchData();
+  }, [userRole]);
 
   return (
     <div className="w-full max-w-screen overflow-x-hidden">
-      {/* Metrics */}
       <div className="px-4 py-4">
         <Card>
           <CardContent>
@@ -79,77 +94,95 @@ const CandidateDashboard = () => {
         </Card>
       </div>
 
-      {/* Jobs Table */}
-      <div className="px-4 pb-6 space-y-2">
-        <h2 className="text-xl font-semibold">Available Job Postings</h2>
-        <div className="overflow-x-auto rounded-lg border max-w-full">
-          <table className="min-w-full table-auto text-sm">
-            <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 text-left font-semibold">Title</th>
-                <th className="px-6 py-3 text-left font-semibold">
-                  Department
-                </th>
-                <th className="px-6 py-3 text-left font-semibold">Location</th>
-                <th className="px-6 py-3 text-left font-semibold">Apply</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <tr key={i} className="border-t">
-                    {Array.from({ length: 4 }).map((_, j) => (
-                      <td key={j} className="px-6 py-4">
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : jobs.length > 0 ? (
-                jobs.map((job) => {
-                  const alreadyApplied = applications.some(
-                    (app) => app.job.id === job.id
-                  );
-
-                  return (
-                    <tr key={job.id} className="border-t bg-white">
-                      <td className="px-6 py-4 font-medium">{job.jobTitle}</td>
-                      <td className="px-6 py-4">{job.department}</td>
-                      <td className="px-6 py-4">{job.location}</td>
-                      <td className="px-6 py-4">
-                        {alreadyApplied ? (
-                          <span className="text-sm text-muted-foreground">
-                            Applied
-                          </span>
-                        ) : (
-                          <ApplyFormDialog jobId={job.id} />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
+      {/* Candidate-only job table */}
+      {userRole === "CANDIDATE" && (
+        <div className="px-4 pb-6 space-y-2">
+          <h2 className="text-xl font-semibold">Available Job Postings</h2>
+          <div className="overflow-x-auto rounded-lg border max-w-full">
+            <table className="min-w-full table-auto text-sm">
+              <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-6 text-center text-muted-foreground"
-                  >
-                    No jobs available at the moment.
-                  </td>
+                  <th className="px-6 py-3 text-left font-semibold">Title</th>
+                  <th className="px-6 py-3 text-left font-semibold">
+                    Department
+                  </th>
+                  <th className="px-6 py-3 text-left font-semibold">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left font-semibold">Apply</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  [...Array(3)].map((_, i) => (
+                    <tr key={i} className="border-t">
+                      {[...Array(4)].map((_, j) => (
+                        <td key={j} className="px-6 py-4">
+                          <Skeleton className="h-4 w-24" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : jobs.length > 0 ? (
+                  jobs.map((job) => {
+                    const alreadyApplied = applications.some(
+                      (app) =>
+                        app.job.jobTitle === job.jobTitle &&
+                        app.job.department === job.department &&
+                        app.job.location === job.location
+                    );
+                    return (
+                      <tr key={job.id} className="border-t bg-white">
+                        <td className="px-6 py-4 font-medium">
+                          {job.jobTitle}
+                        </td>
+                        <td className="px-6 py-4">{job.department}</td>
+                        <td className="px-6 py-4">{job.location}</td>
+                        <td className="px-6 py-4">
+                          {alreadyApplied ? (
+                            <span className="text-sm text-muted-foreground">
+                              Applied
+                            </span>
+                          ) : (
+                            <ApplyFormDialog jobId={job.id} />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-6 py-6 text-center text-muted-foreground"
+                    >
+                      No jobs available at the moment.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Applications Table */}
+      {/* Applications Table (for both candidate and admin) */}
       <div className="px-4 pb-10 space-y-2">
-        <h2 className="text-xl font-semibold">My Applications</h2>
+        <h2 className="text-xl font-semibold">
+          {userRole === "ADMIN" ? "All Applications" : "My Applications"}
+        </h2>
         <div className="overflow-x-auto rounded-lg border max-w-full">
           <table className="min-w-full table-auto text-sm">
             <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
               <tr>
+                {userRole === "ADMIN" && (
+                  <>
+                    <th className="px-6 py-3 text-left font-semibold">
+                      Candidate
+                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">Email</th>
+                  </>
+                )}
                 <th className="px-6 py-3 text-left font-semibold">Job Title</th>
                 <th className="px-6 py-3 text-left font-semibold">
                   Department
@@ -165,9 +198,9 @@ const CandidateDashboard = () => {
             </thead>
             <tbody>
               {appLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
+                [...Array(3)].map((_, i) => (
                   <tr key={i} className="border-t">
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {[...Array(userRole === "ADMIN" ? 8 : 7)].map((_, j) => (
                       <td key={j} className="px-6 py-4">
                         <Skeleton className="h-4 w-24" />
                       </td>
@@ -177,6 +210,16 @@ const CandidateDashboard = () => {
               ) : applications.length > 0 ? (
                 applications.map((app) => (
                   <tr key={app.id} className="border-t bg-white">
+                    {userRole === "ADMIN" && (
+                      <>
+                        <td className="px-6 py-4">
+                          {app.candidate?.name || "—"}
+                        </td>
+                        <td className="px-6 py-4">
+                          {app.candidate?.email || "—"}
+                        </td>
+                      </>
+                    )}
                     <td className="px-6 py-4">{app.job.jobTitle}</td>
                     <td className="px-6 py-4">{app.job.department}</td>
                     <td className="px-6 py-4">{app.job.location}</td>
@@ -231,10 +274,12 @@ const CandidateDashboard = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={userRole === "ADMIN" ? 8 : 7}
                     className="px-6 py-6 text-center text-muted-foreground"
                   >
-                    You haven&apos;t applied to any jobs yet.
+                    {userRole === "ADMIN"
+                      ? "No applications submitted yet."
+                      : "You haven't applied to any jobs yet."}
                   </td>
                 </tr>
               )}

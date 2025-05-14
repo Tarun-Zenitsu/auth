@@ -22,12 +22,17 @@ interface ApplyFormDialogProps {
 export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const [form, setForm] = useState({
     candidateName: "",
     email: "",
-    resumeLink: "",
-    coverLetter: "",
+    note: "",
   });
+
+  // Default resume link
+  const resumeLink =
+    "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +41,7 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
     try {
       await axios.post("/api/applications", {
         ...form,
+        resumeLink, // use default resume URL
         jobId,
       });
 
@@ -44,11 +50,11 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
       setForm({
         candidateName: "",
         email: "",
-        resumeLink: "",
-        coverLetter: "",
+        note: "",
       });
+      setSelectedFile(null);
     } catch (err: unknown) {
-      const error = err as AxiosError; // Type the error to AxiosError
+      const error = err as AxiosError;
       if (
         error?.response?.status === 400 &&
         error?.response?.data === "You have already applied for this job"
@@ -87,20 +93,27 @@ export const ApplyFormDialog = ({ jobId }: ApplyFormDialogProps) => {
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             required
           />
-          <Input
-            placeholder="Resume Link"
-            value={form.resumeLink}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, resumeLink: e.target.value }))
-            }
-            required
-          />
+
+          <div>
+            <Input
+              type="file"
+              accept=".pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setSelectedFile(file);
+              }}
+            />
+            {selectedFile && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Selected: {selectedFile.name}
+              </p>
+            )}
+          </div>
+
           <Textarea
-            placeholder="Cover Letter (optional)"
-            value={form.coverLetter}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, coverLetter: e.target.value }))
-            }
+            placeholder="Note (optional)"
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
           />
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

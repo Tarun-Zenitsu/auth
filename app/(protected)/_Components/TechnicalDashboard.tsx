@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RequisitionStatus } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import TechnicalDashboardMetrics from "./TechnicalDashboardMetrics";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { ApplicationStatus } from "@prisma/client";
 
 interface AssignedApplication {
   id: string;
-  status: RequisitionStatus;
+  status: ApplicationStatus;
   resumeLink: string;
   coverLetter?: string;
   candidate: {
@@ -24,16 +24,22 @@ interface AssignedApplication {
   };
 }
 
-const getStatusBadge = (status: RequisitionStatus) => {
+const getStatusBadge = (status: ApplicationStatus) => {
   switch (status) {
-    case "APPROVED":
+    case "SUBMITTED":
       return <Badge className="bg-green-500 text-white">Approved</Badge>;
     case "REJECTED":
       return <Badge className="bg-red-500 text-white">Rejected</Badge>;
-    case "PENDING_APPROVAL":
+    case "SUBMITTED":
       return <Badge className="bg-yellow-500 text-white">Pending</Badge>;
+    case "SHORTLISTED":
+      return <Badge className="bg-blue-500 text-white">Shortlisted</Badge>;
     default:
-      return <Badge className="bg-gray-500 text-white">{status}</Badge>;
+      return (
+        <Badge className="bg-gray-500 text-white capitalize">
+          {status.toLowerCase()}
+        </Badge>
+      );
   }
 };
 
@@ -67,8 +73,7 @@ export default function TechnicalDashboard() {
 
   return (
     <div className="w-full max-w-screen overflow-x-hidden">
-      {/* Header */}
-      {/* Metrics */}
+      {/* Metrics Section */}
       <div className="px-4 py-4">
         <Card>
           <CardContent>
@@ -107,7 +112,12 @@ export default function TechnicalDashboard() {
                 ))
               ) : applications.length > 0 ? (
                 applications.map((app) => (
-                  <tr key={app.id} className="border-t bg-white">
+                  <tr
+                    key={app.id}
+                    className={`border-t ${
+                      app.status === "SHORTLISTED" ? "bg-blue-50" : "bg-white"
+                    }`}
+                  >
                     <td className="px-6 py-4 font-medium">
                       {app.candidate.name}
                     </td>

@@ -49,6 +49,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleUserDeletion = async (userId: string) => {
+    try {
+      await axios.delete(`/api/users/${userId}/delete`);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setFeedback("User Revoke successfully.");
+    } catch (err) {
+      setFeedback("Error deleting user.");
+      console.error(err);
+    }
+  };
+
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
@@ -98,7 +109,7 @@ const AdminDashboard = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-2 text-center">
+                      <td className="py-2 text-center space-x-2">
                         {!user.isVerified && (
                           <Button
                             size="sm"
@@ -108,6 +119,13 @@ const AdminDashboard = () => {
                             Verify
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="purpul"
+                          onClick={() => handleUserDeletion(user.id)}
+                        >
+                          Revoke
+                        </Button>
                       </td>
                     </tr>
                   ))}
