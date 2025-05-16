@@ -43,6 +43,10 @@ export async function POST(req: Request) {
       data: {
         assignedToTechId: technicalUserId,
       },
+      include: {
+        candidate: true,
+        job: true,
+      },
     });
 
     return NextResponse.json({

@@ -7,37 +7,33 @@ import { Badge } from "@/components/ui/badge";
 import TechnicalDashboardMetrics from "./TechnicalDashboardMetrics";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { ApplicationStatus } from "@prisma/client";
+import { ArrangeMeetingButton } from "./ArrangeMeetingButton";
+import { GiveFeedbackButton } from "./GiveFeedbackButton";
 
 interface AssignedApplication {
   id: string;
   status: ApplicationStatus;
   resumeLink: string;
   coverLetter?: string;
-  candidate: {
-    name: string;
-    email: string;
-  };
-  job: {
-    jobTitle: string;
-    department: string;
-    location: string;
-  };
+  candidate: { name: string; email: string };
+  job: { jobTitle: string; department: string; location: string };
+  updatedAt: string;
 }
 
-const getStatusBadge = (status: ApplicationStatus) => {
-  switch (status) {
+const getStatusBadge = (s: ApplicationStatus) => {
+  switch (s) {
     case "SUBMITTED":
       return <Badge className="bg-green-500 text-white">Approved</Badge>;
     case "REJECTED":
       return <Badge className="bg-red-500 text-white">Rejected</Badge>;
-    case "SUBMITTED":
+    case "HOLD":
       return <Badge className="bg-yellow-500 text-white">Pending</Badge>;
     case "SHORTLISTED":
       return <Badge className="bg-blue-500 text-white">Shortlisted</Badge>;
     default:
       return (
         <Badge className="bg-gray-500 text-white capitalize">
-          {status.toLowerCase()}
+          {s.toLowerCase()}
         </Badge>
       );
   }
@@ -45,35 +41,28 @@ const getStatusBadge = (status: ApplicationStatus) => {
 
 export default function TechnicalDashboard() {
   const user = useCurrentUser();
-  const [applications, setApplications] = useState<AssignedApplication[]>([]);
+  const [apps, setApps] = useState<AssignedApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    if (!user) return;
+    (async () => {
       try {
-        const res = await fetch("/api/technical/assigned-applications", {
-          headers: {
-            "X-User-Role": user?.role || "", // Send user role to backend
-          },
-        });
-        if (!res.ok) throw new Error("Failed to load assigned applications");
-        const data = await res.json();
-        setApplications(data);
-      } catch (error) {
-        console.error(error);
+        const r = await fetch("/api/technical/assigned-applications");
+        if (!r.ok) throw new Error("Failed to load assigned applications");
+        setApps(await r.json());
       } finally {
         setLoading(false);
       }
-    };
-
-    if (user) {
-      fetchApplications();
-    }
+    })();
   }, [user]);
 
+  const deadline = (assignedAt: string) =>
+    new Date(new Date(assignedAt).getTime() + 2 * 24 * 60 * 60 * 1000);
+
   return (
-    <div className="w-full max-w-screen overflow-x-hidden">
-      {/* Metrics Section */}
+    <div className="w-full max-w-screen overflow-x-auto">
+      {/* Metrics */}
       <div className="px-4 py-4">
         <Card>
           <CardContent>
@@ -82,11 +71,11 @@ export default function TechnicalDashboard() {
         </Card>
       </div>
 
-      {/* Applications Table */}
+      {/* Applications */}
       <div className="px-4 pb-4">
-        <div className="overflow-x-auto rounded-lg border max-w-full">
-          <table className="min-w-full table-auto text-sm">
-            <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
+        <div className="overflow-x-auto rounded-lg border max-w-full shadow-sm">
+          <table className="min-w-full table-auto text-sm border-collapse">
+            <thead className="bg-muted sticky top-0 z-10 text-sm text-muted-foreground border-b">
               <tr>
                 <th className="px-6 py-3 text-left font-semibold">Candidate</th>
                 <th className="px-6 py-3 text-left font-semibold">Email</th>
@@ -96,65 +85,88 @@ export default function TechnicalDashboard() {
                 </th>
                 <th className="px-6 py-3 text-left font-semibold">Location</th>
                 <th className="px-6 py-3 text-left font-semibold">Status</th>
+                <th className="px-6 py-3 text-left font-semibold">Deadline</th>
                 <th className="px-6 py-3 text-left font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 3 }).map((_, idx) => (
-                  <tr key={idx} className="border-t">
-                    {Array.from({ length: 7 }).map((_, i) => (
-                      <td key={i} className="px-6 py-4">
+                Array.from({ length: 3 }).map((_, row) => (
+                  <tr key={row} className="border-t bg-white">
+                    {Array.from({ length: 8 }).map((_, col) => (
+                      <td key={col} className="px-6 py-4">
                         <Skeleton className="h-4 w-24" />
                       </td>
                     ))}
                   </tr>
                 ))
-              ) : applications.length > 0 ? (
-                applications.map((app) => (
-                  <tr
-                    key={app.id}
-                    className={`border-t ${
-                      app.status === "SHORTLISTED" ? "bg-blue-50" : "bg-white"
-                    }`}
-                  >
-                    <td className="px-6 py-4 font-medium">
-                      {app.candidate.name}
-                    </td>
-                    <td className="px-6 py-4">{app.candidate.email}</td>
-                    <td className="px-6 py-4">{app.job.jobTitle}</td>
-                    <td className="px-6 py-4">{app.job.department}</td>
-                    <td className="px-6 py-4">{app.job.location}</td>
-                    <td className="px-6 py-4">{getStatusBadge(app.status)}</td>
-                    <td className="px-6 py-4 space-x-2">
-                      <a
-                        href={app.resumeLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline"
-                      >
-                        Resume
-                      </a>
-                      {app.coverLetter && (
+              ) : apps.length ? (
+                apps.map((app) => {
+                  const dl = deadline(app.updatedAt);
+                  const overdue = dl < new Date();
+
+                  return (
+                    <tr
+                      key={app.id}
+                      className={`border-t transition-colors hover:bg-muted/40 ${
+                        overdue
+                          ? "bg-red-50"
+                          : app.status === "SHORTLISTED"
+                          ? "bg-blue-50"
+                          : "bg-white"
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-medium">
+                        {app.candidate.name}
+                      </td>
+                      <td className="px-6 py-4">{app.candidate.email}</td>
+                      <td className="px-6 py-4">{app.job.jobTitle}</td>
+                      <td className="px-6 py-4">{app.job.department}</td>
+                      <td className="px-6 py-4">{app.job.location}</td>
+                      <td className="px-6 py-4">
+                        {getStatusBadge(app.status)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`font-medium ${
+                            overdue ? "text-red-600" : "text-gray-700"
+                          }`}
+                        >
+                          {dl.toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 space-y-1 flex flex-col">
                         <a
-                          href={app.coverLetter}
+                          href={app.resumeLink}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 underline"
                         >
-                          Cover Letter
+                          Resume
                         </a>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                        {app.coverLetter && (
+                          <a
+                            href={app.coverLetter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline"
+                          >
+                            Cover Letter
+                          </a>
+                        )}
+                        <ArrangeMeetingButton applicationId={app.id} />
+                        <GiveFeedbackButton applicationId={app.id} />
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-6 text-center text-muted-foreground"
                   >
-                    No applications assigned to you.
+                    You currently have no applications assigned. 🎉
                   </td>
                 </tr>
               )}

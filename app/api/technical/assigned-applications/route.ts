@@ -112,6 +112,9 @@ export async function GET() {
             },
           },
         },
+        orderBy: {
+          updatedAt: "desc",
+        },
       });
 
       return NextResponse.json(allApplications);
